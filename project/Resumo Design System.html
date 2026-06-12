@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resumo — Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&family=PT+Mono&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Paper Design System — Resumo Edition ────────────────────────
+       Fonts     : Montserrat (display) · Roboto (body) · PT Mono (mono)
+       Palette   : Warm cream surface · Near-black primary · Purple accent
+       Motion    : No decorative loops · Subtle one-shot entrances only
+       Radius    : 2–4 px maximum · Prefer sharp-cornered panels
+       Borders   : 1 px warm-toned · Hairline dividers
+    ─────────────────────────────────────────────────────────────────── */
+    :root {
+      /* Brand tokens */
+      --color-primary:    #111111;
+      --color-accent:     #8B5CF6;
+      --color-success:    #16A34A;
+      --color-warning:    #D97706;
+      --color-danger:     #DC2626;
+      --color-surface:    #FFFFFF;
+      --color-text:       #111827;
+
+      /* Extended surface tokens */
+      --bg:               #F4F3EF;
+      --bg-sidebar:       #FDFCFB;
+      --border:           #E5E4DE;
+      --border-strong:    #C8C7BF;
+      --text-2:           #6B7280;
+      --text-3:           #9CA3AF;
+      --accent-bg:        #F5F3FF;
+      --success-bg:       #F0FDF4;
+      --warning-bg:       #FFFBEB;
+      --danger-bg:        #FFF5F5;
+
+      /* Type scale */
+      --text-xs:    11px;
+      --text-sm:    13px;
+      --text-base:  14px;
+      --text-md:    16px;
+      --text-lg:    18px;
+      --text-xl:    24px;
+      --text-2xl:   32px;
+      --text-3xl:   40px;
+
+      /* Spacing scale */
+      --sp-1:  4px;
+      --sp-2:  8px;
+      --sp-3:  12px;
+      --sp-4:  16px;
+      --sp-6:  24px;
+      --sp-8:  32px;
+
+      /* Fonts */
+      --font-display: 'Montserrat', sans-serif;
+      --font-body:    'Roboto', sans-serif;
+      --font-mono:    'PT Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--color-text);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Page shell ─────────────────────────────────────────────── */
+    .page { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    .nav {
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      padding: var(--sp-8) var(--sp-4);
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      display: flex; flex-direction: column; gap: var(--sp-1);
+    }
+
+    .nav-logo {
+      font-family: var(--font-display);
+      font-weight: 600; font-size: 15px; letter-spacing: -0.02em;
+      color: var(--color-text); margin-bottom: var(--sp-6);
+      display: block;
+    }
+
+    .nav-section {
+      font-size: var(--text-xs); font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-3); padding: var(--sp-2) var(--sp-3);
+      margin-top: var(--sp-4); display: block;
+    }
+
+    .nav-link {
+      font-size: var(--text-sm); color: var(--text-2);
+      text-decoration: none; padding: 6px var(--sp-3);
+      border-radius: 3px; display: block;
+      border-left: 2px solid transparent;
+      transition: all 0.1s;
+    }
+    .nav-link:hover { color: var(--color-text); background: var(--accent-bg); border-left-color: var(--color-accent); }
+
+    /* ── Content ─────────────────────────────────────────────────── */
+    .content { padding: var(--sp-8) 64px var(--sp-8) 56px; max-width: 900px; }
+
+    .page-title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl); font-weight: 700;
+      letter-spacing: -0.025em; line-height: 1.15;
+      margin-bottom: var(--sp-2);
+    }
+
+    .page-sub { font-size: var(--text-md); color: var(--text-2); line-height: 1.65; margin-bottom: 56px; }
+
+    /* Section */
+    .section { margin-bottom: 56px; }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg); font-weight: 600;
+      letter-spacing: -0.01em; margin-bottom: 6px;
+    }
+
+    .section-rule { height: 1px; background: var(--border); margin-bottom: var(--sp-6); }
+
+    .section-sub { font-size: var(--text-sm); color: var(--text-2); margin-bottom: var(--sp-6); line-height: 1.65; }
+
+    /* Token grid */
+    .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--sp-4); }
+
+    .token-swatch {
+      background: var(--color-surface);
+      border: 1px solid var(--border);
+      border-radius: 4px; overflow: hidden;
+    }
+
+    .swatch-color { height: 56px; }
+
+    .swatch-info { padding: var(--sp-2) var(--sp-3); }
+
+    .swatch-name { font-size: var(--text-xs); font-weight: 600; color: var(--color-text); display: block; }
+
+    .swatch-value { font-size: var(--text-xs); color: var(--text-3); font-family: var(--font-mono); display: block; margin-top: 2px; }
+
+    .swatch-token { font-size: 10px; color: var(--text-3); font-family: var(--font-mono); display: block; margin-top: 1px; }
+
+    /* Type specimens */
+    .type-row { display: flex; align-items: baseline; gap: var(--sp-6); padding: var(--sp-4) 0; border-bottom: 1px solid var(--border); }
+    .type-row:first-child { border-top: 1px solid var(--border); }
+    .type-meta { min-width: 180px; flex-shrink: 0; }
+    .type-meta-label { font-size: var(--text-xs); font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+    .type-meta-spec { font-size: var(--text-xs); color: var(--text-3); font-family: var(--font-mono); margin-top: 3px; }
+    .type-specimen { flex: 1; }
+
+    /* Component examples */
+    .comp-row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-3); padding: var(--sp-4) 0; border-bottom: 1px solid var(--border); }
+    .comp-row:first-child { border-top: 1px solid var(--border); }
+
+    .comp-label { min-width: 120px; font-size: var(--text-xs); font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 6px; border-radius: 4px; font-family: var(--font-body); cursor: pointer; font-size: var(--text-sm); transition: all 0.1s; }
+
+    .btn-primary { background: var(--color-primary); color: #fff; border: none; padding: 8px 18px; font-weight: 500; }
+    .btn-primary:hover { background: #2a2a2a; }
+
+    .btn-secondary { background: none; border: 1px solid var(--border); color: var(--text-2); padding: 8px 16px; }
+    .btn-secondary:hover { background: #F9F8F5; color: var(--color-text); }
+
+    .btn-ghost { background: none; border: none; color: var(--text-2); padding: 8px 12px; text-decoration: underline; text-underline-offset: 2px; }
+    .btn-ghost:hover { color: var(--color-text); }
+
+    .btn-danger { background: var(--danger-bg); border: 1px solid #FCA5A5; color: var(--color-danger); padding: 8px 16px; font-weight: 500; }
+
+    .btn-sm { padding: 5px 12px; font-size: var(--text-xs); }
+
+    .btn:disabled, .btn[disabled] { background: var(--border) !important; color: var(--text-3) !important; border-color: transparent !important; cursor: not-allowed; }
+
+    /* Inputs */
+    .input {
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 8px 12px; font-size: var(--text-sm);
+      font-family: var(--font-body); color: var(--color-text);
+      background: var(--color-surface); outline: none;
+      transition: border-color 0.1s;
+    }
+    .input:focus { border-color: var(--color-primary); }
+    .input::placeholder { color: var(--text-3); }
+    .input[disabled] { background: #F9F8F5; color: var(--text-3); }
+
+    .textarea { resize: vertical; min-height: 80px; line-height: 1.65; }
+
+    .select { cursor: pointer; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; }
+
+    /* Nav items */
+    .nav-item-demo {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 4px; font-size: var(--text-sm);
+      font-weight: 400; color: var(--text-2); cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: all 0.1s; user-select: none;
+    }
+    .nav-item-demo.active {
+      font-weight: 500; color: var(--color-text);
+      background: var(--accent-bg); border-left-color: var(--color-accent);
+    }
+    .nav-item-demo:hover:not(.active) { background: #F9F8F5; }
+
+    /* Cards / panels */
+    .card {
+      background: var(--color-surface); border: 1px solid var(--border);
+      border-radius: 4px; padding: var(--sp-4);
+    }
+
+    /* Status dots */
+    .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+
+    /* Spacing scale */
+    .space-row { display: flex; align-items: center; gap: var(--sp-6); padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .space-row:first-child { border-top: 1px solid var(--border); }
+    .space-bar { background: var(--color-accent); height: 20px; border-radius: 2px; opacity: 0.7; }
+    .space-meta { min-width: 60px; font-size: var(--text-xs); font-family: var(--font-mono); color: var(--text-3); }
+
+    /* Change card demo */
+    .change-card { background: var(--color-surface); border: 1px solid var(--border); border-radius: 4px; padding: 14px 16px; }
+    .change-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .change-before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .change-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; font-family: var(--font-display); }
+    .change-text-before { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+    .change-text-after  { font-size: 12px; color: var(--color-text); font-weight: 500; line-height: 1.55; }
+
+    /* Dividers */
+    .divider { height: 1px; background: var(--border); margin: var(--sp-6) 0; }
+    .divider-strong { height: 1px; background: var(--border-strong); margin: var(--sp-6) 0; }
+
+    /* Status bar */
+    .status-bar { display: flex; align-items: center; justify-content: space-between; padding: 9px 14px; background: var(--color-surface); border: 1px solid var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- Sidebar nav -->
+  <nav class="nav">
+    <a class="nav-logo" href="#">resumo</a>
+    <a class="nav-link" href="#overview">Overview</a>
+    <span class="nav-section">Foundation</span>
+    <a class="nav-link" href="#colors">Colors</a>
+    <a class="nav-link" href="#typography">Typography</a>
+    <a class="nav-link" href="#spacing">Spacing</a>
+    <span class="nav-section">Components</span>
+    <a class="nav-link" href="#buttons">Buttons</a>
+    <a class="nav-link" href="#inputs">Inputs</a>
+    <a class="nav-link" href="#navigation">Navigation</a>
+    <a class="nav-link" href="#badges">Badges &amp; Tags</a>
+    <a class="nav-link" href="#cards">Cards &amp; Panels</a>
+    <a class="nav-link" href="#patterns">App Patterns</a>
+  </nav>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <p id="overview" style="font-family:var(--font-display);font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Resumo · Design System v1.0</p>
+    <h1 class="page-title">Paper Design</h1>
+    <p class="page-sub">Minimal, print-inspired, tactile. Built on warm neutrals, near-black primary actions, and a single purple accent. Every element earns its place.</p>
+
+    <!-- ── COLORS ─────────────────────────────────────────────────── -->
+    <section class="section" id="colors">
+      <h2 class="section-title">Colors</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">One accent (purple), one primary (near-black), warm neutrals throughout. Semantic colors — success, warning, danger — appear only in functional contexts, never decoratively.</p>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Core</p>
+      <div class="token-grid" style="margin-bottom:24px;">
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#111111;"></div>
+          <div class="swatch-info"><span class="swatch-name">Primary</span><span class="swatch-value">#111111</span><span class="swatch-token">--color-primary</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#8B5CF6;"></div>
+          <div class="swatch-info"><span class="swatch-name">Accent</span><span class="swatch-value">#8B5CF6</span><span class="swatch-token">--color-accent</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#FFFFFF;border-bottom:1px solid #E5E4DE;"></div>
+          <div class="swatch-info"><span class="swatch-name">Surface</span><span class="swatch-value">#FFFFFF</span><span class="swatch-token">--color-surface</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#F4F3EF;"></div>
+          <div class="swatch-info"><span class="swatch-name">Background</span><span class="swatch-value">#F4F3EF</span><span class="swatch-token">--bg</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#FDFCFB;border-bottom:1px solid #E5E4DE;"></div>
+          <div class="swatch-info"><span class="swatch-name">Sidebar</span><span class="swatch-value">#FDFCFB</span><span class="swatch-token">--bg-sidebar</span></div>
+        </div>
+      </div>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Text</p>
+      <div class="token-grid" style="margin-bottom:24px;">
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#111827;"></div>
+          <div class="swatch-info"><span class="swatch-name">Text</span><span class="swatch-value">#111827</span><span class="swatch-token">--color-text</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#6B7280;"></div>
+          <div class="swatch-info"><span class="swatch-name">Text Secondary</span><span class="swatch-value">#6B7280</span><span class="swatch-token">--text-2</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#9CA3AF;"></div>
+          <div class="swatch-info"><span class="swatch-name">Text Muted</span><span class="swatch-value">#9CA3AF</span><span class="swatch-token">--text-3</span></div>
+        </div>
+      </div>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Border</p>
+      <div class="token-grid" style="margin-bottom:24px;">
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#E5E4DE;"></div>
+          <div class="swatch-info"><span class="swatch-name">Border</span><span class="swatch-value">#E5E4DE</span><span class="swatch-token">--border</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#C8C7BF;"></div>
+          <div class="swatch-info"><span class="swatch-name">Border Strong</span><span class="swatch-value">#C8C7BF</span><span class="swatch-token">--border-strong</span></div>
+        </div>
+      </div>
+
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:12px;">Semantic</p>
+      <div class="token-grid">
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#16A34A;"></div>
+          <div class="swatch-info"><span class="swatch-name">Success</span><span class="swatch-value">#16A34A</span><span class="swatch-token">--color-success</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#F0FDF4;border-bottom:1px solid #E5E4DE;"></div>
+          <div class="swatch-info"><span class="swatch-name">Success Bg</span><span class="swatch-value">#F0FDF4</span><span class="swatch-token">--success-bg</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#D97706;"></div>
+          <div class="swatch-info"><span class="swatch-name">Warning</span><span class="swatch-value">#D97706</span><span class="swatch-token">--color-warning</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#DC2626;"></div>
+          <div class="swatch-info"><span class="swatch-name">Danger</span><span class="swatch-value">#DC2626</span><span class="swatch-token">--color-danger</span></div>
+        </div>
+        <div class="token-swatch">
+          <div class="swatch-color" style="background:#F5F3FF;border-bottom:1px solid #E5E4DE;"></div>
+          <div class="swatch-info"><span class="swatch-name">Accent Bg</span><span class="swatch-value">#F5F3FF</span><span class="swatch-token">--accent-bg</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TYPOGRAPHY ─────────────────────────────────────────────── -->
+    <section class="section" id="typography">
+      <h2 class="section-title">Typography</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Three faces: <strong>Montserrat</strong> for display and section labels, <strong>Roboto</strong> for all body and UI copy, <strong>PT Mono</strong> for code, metadata, and timestamps.</p>
+
+      <!-- Scale -->
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">3XL / Display</span><span class="type-meta-spec">40px · Montserrat 700</span></div>
+        <div class="type-specimen" style="font-family:var(--font-display);font-size:40px;font-weight:700;letter-spacing:-0.025em;line-height:1.1;">resumo</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">2XL / Heading</span><span class="type-meta-spec">32px · Montserrat 700</span></div>
+        <div class="type-specimen" style="font-family:var(--font-display);font-size:32px;font-weight:700;letter-spacing:-0.025em;line-height:1.15;">Kanishk Singh</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">XL / Title</span><span class="type-meta-spec">24px · Montserrat 600</span></div>
+        <div class="type-specimen" style="font-family:var(--font-display);font-size:24px;font-weight:600;letter-spacing:-0.02em;">New Application</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">LG / Section</span><span class="type-meta-spec">18px · Montserrat 600</span></div>
+        <div class="type-specimen" style="font-family:var(--font-display);font-size:18px;font-weight:600;">Upload your resume</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">MD / Panel head</span><span class="type-meta-spec">16px · Montserrat 500</span></div>
+        <div class="type-specimen" style="font-family:var(--font-display);font-size:16px;font-weight:500;">Default tailoring prompt</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">Base / Body</span><span class="type-meta-spec">14px · Roboto 400</span></div>
+        <div class="type-specimen" style="font-size:14px;font-weight:400;line-height:1.65;color:var(--color-text);">Paste the full job description here. Resumo will use Claude to tailor your resume to this specific role without fabricating any experience.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">SM / UI</span><span class="type-meta-spec">13px · Roboto 400</span></div>
+        <div class="type-specimen" style="font-size:13px;color:var(--text-2);">Kanishk_Singh_Resume.pdf · 4,200 chars · Replace</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">XS / Label</span><span class="type-meta-spec">11px · Roboto 400</span></div>
+        <div class="type-specimen" style="font-size:11px;color:var(--text-3);">49 more characters needed to generate.</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">XS / Caps label</span><span class="type-meta-spec">10px · Montserrat 700 · spaced</span></div>
+        <div class="type-specimen" style="font-family:var(--font-display);font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-3);">Experience · Summary · Skills</div>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="type-meta-label">Mono / Meta</span><span class="type-meta-spec">11px · PT Mono</span></div>
+        <div class="type-specimen" style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);">Jan 2023 – Present · 4,200 chars · Jun 8</div>
+      </div>
+    </section>
+
+    <!-- ── SPACING ─────────────────────────────────────────────────── -->
+    <section class="section" id="spacing">
+      <h2 class="section-title">Spacing</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Base-4 scale. Token names reflect multiples of 4px. Gap and padding should always use these values.</p>
+
+      <div>
+        <div class="space-row">
+          <div class="space-meta">sp-1 · 4px</div>
+          <div class="space-bar" style="width:4px;"></div>
+        </div>
+        <div class="space-row">
+          <div class="space-meta">sp-2 · 8px</div>
+          <div class="space-bar" style="width:8px;"></div>
+        </div>
+        <div class="space-row">
+          <div class="space-meta">sp-3 · 12px</div>
+          <div class="space-bar" style="width:12px;"></div>
+        </div>
+        <div class="space-row">
+          <div class="space-meta">sp-4 · 16px</div>
+          <div class="space-bar" style="width:16px;"></div>
+        </div>
+        <div class="space-row">
+          <div class="space-meta">sp-6 · 24px</div>
+          <div class="space-bar" style="width:24px;"></div>
+        </div>
+        <div class="space-row">
+          <div class="space-meta">sp-8 · 32px</div>
+          <div class="space-bar" style="width:32px;"></div>
+        </div>
+      </div>
+
+      <p style="margin-top:24px;font-size:13px;color:var(--text-2);line-height:1.65;">Border radius: <code style="font-family:var(--font-mono);font-size:12px;background:#F0EFE9;padding:1px 5px;border-radius:2px;">2px</code> for inline chips, <code style="font-family:var(--font-mono);font-size:12px;background:#F0EFE9;padding:1px 5px;border-radius:2px;">3px</code> for small controls, <code style="font-family:var(--font-mono);font-size:12px;background:#F0EFE9;padding:1px 5px;border-radius:2px;">4px</code> for panels and modals, <code style="font-family:var(--font-mono);font-size:12px;background:#F0EFE9;padding:1px 5px;border-radius:2px;">6px</code> for overlays. Never exceed 6px.</p>
+    </section>
+
+    <!-- ── BUTTONS ─────────────────────────────────────────────────── -->
+    <section class="section" id="buttons">
+      <h2 class="section-title">Buttons</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Near-black primary. Ghost and secondary for lower-emphasis actions. Danger only for destructive, irreversible operations. Disabled state uses border background.</p>
+
+      <div class="comp-row">
+        <div class="comp-label">Primary</div>
+        <button class="btn btn-primary">Generate</button>
+        <button class="btn btn-primary btn-sm">Save</button>
+        <button class="btn btn-primary" disabled>Generate</button>
+      </div>
+      <div class="comp-row">
+        <div class="comp-label">Secondary</div>
+        <button class="btn btn-secondary">New Application</button>
+        <button class="btn btn-secondary btn-sm">Replace</button>
+        <button class="btn btn-secondary btn-sm">Change</button>
+      </div>
+      <div class="comp-row">
+        <div class="comp-label">Ghost</div>
+        <button class="btn btn-ghost">Replace</button>
+        <button class="btn btn-ghost" style="font-size:12px;">← New Application</button>
+      </div>
+      <div class="comp-row">
+        <div class="comp-label">Danger</div>
+        <button class="btn btn-danger btn-sm">Reset app</button>
+      </div>
+      <div class="comp-row">
+        <div class="comp-label">With icon</div>
+        <button class="btn btn-primary">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7L2 2l2.5 5L2 12l10-5z"/></svg>
+          Generate
+        </button>
+        <button class="btn btn-secondary btn-sm">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
+          Add Company
+        </button>
+        <button class="btn btn-primary" style="font-size:12px;padding:5px 12px;">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v7M4.5 6.5L7 9l2.5-2.5"/><path d="M2 11.5h10"/></svg>
+          Download PDF
+        </button>
+      </div>
+    </section>
+
+    <!-- ── INPUTS ──────────────────────────────────────────────────── -->
+    <section class="section" id="inputs">
+      <h2 class="section-title">Inputs</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Warm-border neutral at rest, near-black border on focus. No glow. Background always white. Label above, error below.</p>
+
+      <div class="comp-row" style="flex-direction:column;align-items:flex-start;">
+        <div class="comp-label" style="margin-bottom:8px;">Text input</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <input class="input" placeholder="Search companies…" style="width:220px;" />
+          <input class="input" value="Kanishk_Singh_Resume.pdf" style="width:240px;" />
+          <input class="input" disabled placeholder="Disabled state" style="width:200px;" />
+        </div>
+      </div>
+
+      <div class="comp-row" style="flex-direction:column;align-items:flex-start;">
+        <div class="comp-label" style="margin-bottom:8px;">Textarea</div>
+        <textarea class="input textarea" placeholder="Paste the full job description here…" style="width:480px;"></textarea>
+      </div>
+
+      <div class="comp-row" style="flex-direction:column;align-items:flex-start;">
+        <div class="comp-label" style="margin-bottom:8px;">Select</div>
+        <select class="input select" style="width:220px;">
+          <option>Haiku 4.5 — ~$0.01</option>
+          <option selected>Sonnet 4.6 — ~$0.05</option>
+          <option>Opus 4.6 — ~$0.25</option>
+        </select>
+      </div>
+
+      <div class="comp-row" style="flex-direction:column;align-items:flex-start;">
+        <div class="comp-label" style="margin-bottom:8px;">Focus state</div>
+        <input class="input" value="Focused field" style="width:220px;border-color:var(--color-primary);" />
+      </div>
+    </section>
+
+    <!-- ── NAVIGATION ─────────────────────────────────────────────── -->
+    <section class="section" id="navigation">
+      <h2 class="section-title">Navigation</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Sidebar nav uses a 2px left border accent on active items with a very subtle purple tint. No background pill. Icon color shifts to accent. Inactive items use <code style="font-family:var(--font-mono);font-size:12px;background:#F0EFE9;padding:1px 5px;border-radius:2px;">text-2</code>.</p>
+
+      <div style="background:var(--bg-sidebar);border:1px solid var(--border);border-radius:4px;padding:8px;width:200px;display:flex;flex-direction:column;gap:1px;">
+        <div class="nav-item-demo active">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7L8 2l6 5v7a.5.5 0 01-.5.5H10V10H6v4.5H2.5A.5.5 0 012 14V7z"/></svg>
+          Home
+        </div>
+        <div class="nav-item-demo">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/></svg>
+          Prompts
+        </div>
+        <div class="nav-item-demo">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="12" height="7" rx="1"/><path d="M5 7V5a1 1 0 011-1h4a1 1 0 011 1v2M2 11h12"/></svg>
+          Companies
+        </div>
+      </div>
+    </section>
+
+    <!-- ── BADGES ──────────────────────────────────────────────────── -->
+    <section class="section" id="badges">
+      <h2 class="section-title">Badges &amp; Tags</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Section badges in What Changed use light tinted backgrounds with matching text. Status uses a 6px dot. Prompt chip uses accent text with ghost border.</p>
+
+      <div class="comp-row">
+        <div class="comp-label">Section badges</div>
+        <span class="badge" style="background:var(--accent-bg);color:var(--color-accent);">SUMMARY</span>
+        <span class="badge" style="background:#EFF6FF;color:#1D4ED8;">EXPERIENCE</span>
+        <span class="badge" style="background:var(--success-bg);color:var(--color-success);">SKILLS</span>
+        <span class="badge" style="background:var(--warning-bg);color:var(--color-warning);">EDUCATION</span>
+      </div>
+      <div class="comp-row">
+        <div class="comp-label">Status dots</div>
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--color-success);background:var(--success-bg);border:1px solid #BBF7D0;border-radius:3px;padding:5px 10px;">
+          <span class="dot" style="background:var(--color-success);"></span> Active
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);">
+          <span class="dot" style="background:var(--color-accent);"></span> Default tailoring prompt
+        </span>
+      </div>
+      <div class="comp-row">
+        <div class="comp-label">Prompt chip</div>
+        <button style="display:flex;align-items:center;gap:4px;background:none;border:1px solid var(--border);border-radius:3px;padding:4px 9px;font-size:12px;cursor:pointer;color:var(--color-accent);font-weight:500;font-family:var(--font-body);">
+          Default tailoring prompt
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4.5l3 3 3-3"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- ── CARDS ───────────────────────────────────────────────────── -->
+    <section class="section" id="cards">
+      <h2 class="section-title">Cards &amp; Panels</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Panels use white background, 1px warm border, 4px radius. No drop shadows on in-page elements — shadow only on the modal overlay. Dividers replace visual depth.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- Resume status bar -->
+        <div>
+          <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Resume status bar</p>
+          <div class="status-bar">
+            <div style="display:flex;align-items:center;gap:7px;">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5H3.5a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5.5L8 1.5z"/><path d="M8 1.5v4h4"/></svg>
+              <span style="font-size:13px;font-weight:500;">Kanishk_Singh_Resume.pdf</span>
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">4,200 chars</span>
+            </div>
+            <button style="background:none;border:none;color:var(--text-3);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-family:var(--font-body);">Replace</button>
+          </div>
+        </div>
+
+        <!-- Company list item -->
+        <div>
+          <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Company list</p>
+          <div style="background:var(--color-surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+            <div style="padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+              <div><div style="font-size:13px;font-weight:500;">Linear</div><div style="font-size:12px;color:var(--text-3);margin-top:2px;">Product Designer</div></div>
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">Jun 8</span>
+            </div>
+            <div style="padding:13px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);">
+              <div><div style="font-size:13px;font-weight:500;">Vercel</div><div style="font-size:12px;color:var(--text-3);margin-top:2px;">Senior Product Designer</div></div>
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">Jun 5</span>
+            </div>
+            <div style="padding:13px 16px;display:flex;align-items:center;justify-content:space-between;">
+              <div><div style="font-size:13px;font-weight:500;">Stripe</div><div style="font-size:12px;color:var(--text-3);margin-top:2px;">Design Systems Lead</div></div>
+              <span style="font-size:11px;color:var(--text-3);font-family:var(--font-mono);">May 28</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div style="margin-top:16px;">
+        <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;">Empty state</p>
+        <div class="card" style="padding:40px 24px;text-align:center;color:var(--text-3);font-size:13px;">
+          No companies yet. Add your first company above.
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PATTERNS ────────────────────────────────────────────────── -->
+    <section class="section" id="patterns">
+      <h2 class="section-title">App Patterns</h2>
+      <div class="section-rule"></div>
+      <p class="section-sub">Patterns specific to Resumo's core interactions.</p>
+
+      <!-- What Changed card -->
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">What Changed card</p>
+      <div class="change-card" style="max-width:580px;margin-bottom:24px;">
+        <div class="change-card-header">
+          <span class="badge" style="background:#EFF6FF;color:#1D4ED8;">EXPERIENCE</span>
+          <span style="font-size:12px;color:var(--text-2);">Acme Corp</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-3);font-style:italic;">Rephrased</span>
+        </div>
+        <div class="change-before-after">
+          <div>
+            <div class="change-label">Before</div>
+            <div class="change-text-before">Improved core dashboard metrics significantly</div>
+          </div>
+          <div>
+            <div class="change-label">After</div>
+            <div class="change-text-after">Redesigned core dashboard — increased daily active usage by 34%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel header pattern -->
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">Panel header</p>
+      <div style="background:var(--color-surface);border:1px solid var(--border);border-radius:4px;overflow:hidden;max-width:580px;margin-bottom:24px;">
+        <div style="padding:0 20px;height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:var(--font-display);font-weight:600;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-3);">New Application</span>
+          <button style="display:flex;align-items:center;gap:4px;background:none;border:none;font-size:12px;color:var(--text-3);cursor:pointer;font-family:var(--font-body);">← Back</button>
+        </div>
+        <div style="padding:16px 20px;color:var(--text-2);font-size:13px;">Panel content area</div>
+      </div>
+
+      <!-- Modal header pattern -->
+      <p style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:10px;">Modal header</p>
+      <div style="background:var(--color-surface);border:1px solid var(--border);border-radius:6px;overflow:hidden;max-width:460px;box-shadow:0 8px 40px rgba(0,0,0,0.12);">
+        <div style="padding:17px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:var(--font-display);font-size:15px;font-weight:600;">Settings</span>
+          <button style="background:none;border:none;cursor:pointer;color:var(--text-3);display:flex;padding:2px;">✕</button>
+        </div>
+        <div style="padding:20px 24px;display:flex;flex-direction:column;gap:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-size:13px;font-weight:500;">Resume</div><div style="font-size:11px;color:var(--text-3);margin-top:2px;">Kanishk_Singh_Resume.pdf · 4,200 chars</div></div>
+            <button class="btn btn-secondary btn-sm">Replace</button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+</div>
+
+</body>
+</html>

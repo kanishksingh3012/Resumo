@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resumo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Roboto:wght@300;400;500&family=PT+Mono&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-primary:#111111; --color-accent:#8B5CF6; --color-success:#16A34A;
+      --color-warning:#D97706; --color-danger:#DC2626; --color-surface:#FFFFFF;
+      --color-text:#111827; --bg:#F4F3EF; --border:#E5E4DE; --border-strong:#C8C7BF;
+      --text-2:#6B7280; --text-3:#9CA3AF; --accent-bg:#F5F3FF; --success-bg:#F0FDF4;
+      --font-display:'Montserrat',sans-serif; --font-body:'Roboto',sans-serif; --font-mono:'PT Mono',monospace;
+    }
+    html, body, #root { height:100%; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--color-text); font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+    textarea, input, select, button { font-family:var(--font-body); font-size:14px; }
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--border-strong); border-radius:3px; }
+    @keyframes spin    { to { transform:rotate(360deg); } }
+    @keyframes modalIn { from { opacity:0; transform:translateY(8px) scale(0.98); } to { opacity:1; transform:none; } }
+    .spin { animation:spin 0.7s linear infinite; }
+    .fade { animation:modalIn 0.18s ease forwards; }
+    @media (max-width:768px) {
+      .sidebar { display:none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ── TOKENS ───────────────────────────────────────────────────────── */
+const T = {
+  bg:'#F4F3EF', surface:'#FFFFFF', border:'#E5E4DE', borderStrong:'#C8C7BF',
+  text:'#111827', t2:'#6B7280', t3:'#9CA3AF', primary:'#111111',
+  accent:'#8B5CF6', accentBg:'#F5F3FF', success:'#16A34A', successBg:'#F0FDF4',
+  warning:'#D97706', danger:'#DC2626',
+};
+
+/* ── DATA ─────────────────────────────────────────────────────────── */
+const RESUME_DATA = { name:'Kanishk_Singh_Resume.pdf', format:'PDF', chars:4200, modified:'Jun 10' };
+
+const PROMPTS = [
+  { id:1, name:'Default tailoring prompt', active:true  },
+  { id:2, name:'Product Design roles',     active:false },
+];
+
+const COMPANIES = [
+  { id:1, name:'Linear',  role:'Product Designer',        date:'Jun 8'  },
+  { id:2, name:'Vercel',  role:'Senior Product Designer', date:'Jun 5'  },
+  { id:3, name:'Stripe',  role:'Design Systems Lead',     date:'May 28' },
+];
+
+const INIT_TEMPLATES = [
+  { id:1, name:"Jake's Resume",    type:'builtin', latex:'' },
+  { id:2, name:'AltaCV',           type:'builtin', latex:'' },
+  { id:3, name:'ModernCV Classic', type:'builtin', latex:'' },
+];
+
+const DEFAULT_PROMPT =
+`You are a resume tailoring assistant. Output ONLY a valid JSON object.
+
+Given a base resume and a job description, produce a tightly tailored ONE-PAGE resume.
+
+CONTENT RULES:
+- Do NOT invent roles, companies, or skills not in the base resume
+- Pick the most JD-relevant experiences; max 3 bullets per role
+- Each bullet: strong action verb + concrete metric or outcome
+- Summary: 2–3 sentences tailored to the role`;
+
+const RESULT = {
+  name:'Kanishk Singh', subtitle:'Product Designer · Bengaluru, India',
+  contact:'kanishk@example.com · linkedin.com/in/kanishk · kanishk.design',
+  summary:'Product designer with 4 years building 0→1 and growth-stage products. Deep experience in design systems, component libraries, and cross-functional collaboration with engineering teams.',
+  experience:[
+    { company:'Acme Corp', role:'Senior Product Designer', dates:'Jan 2023 – Present',
+      bullets:['Redesigned core dashboard — increased daily active usage by 34%','Built and shipped component library used by 8 engineers across 3 products','Led 0→1 design for mobile app, from discovery to App Store launch'] },
+    { company:'Beta Studio', role:'Product Designer', dates:'Mar 2021 – Dec 2022',
+      bullets:['Owned end-to-end design for B2B SaaS product (12k users)','Established design system reducing redundant component work by 60%'] },
+  ],
+  skills:[
+    { category:'Design',   values:'Figma, Framer, Principle' },
+    { category:'Research', values:'User interviews, usability testing, competitive analysis' },
+    { category:'Systems',  values:'Design tokens, component libraries, documentation' },
+    { category:'Handoff',  values:'Zeplin, Storybook, design specs' },
+  ],
+  company:'Linear',
+  changes:[
+    { section:'Summary',    action:'Reworded',      before:'Product designer focused on clean interfaces.', after:'Product designer with 4 years building 0→1 and growth-stage products. Deep experience in design systems…' },
+    { section:'Experience', ctx:'Acme Corp',         action:'Rephrased',     before:'Improved core dashboard metrics significantly', after:'Redesigned core dashboard — increased daily active usage by 34%' },
+    { section:'Experience', ctx:'Acme Corp',         action:'Promoted',      before:'Helped with component library development', after:'Built and shipped component library used by 8 engineers across 3 products' },
+    { section:'Skills',     action:'Keyword added',  before:'Figma, Framer', after:'Figma, Framer, Principle' },
+    { section:'Experience', ctx:'Beta Studio',       action:'Reordered',     before:'Worked on design system to improve efficiency', after:'Established design system reducing redundant work by 60%' },
+  ],
+};
+
+/* ── ICONS ────────────────────────────────────────────────────────── */
+const I = {
+  Home:     ()=><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 7L8 2l6 5v7a.5.5 0 01-.5.5H10V10H6v4.5H2.5A.5.5 0 012 14V7z"/></svg>,
+  Template: ()=><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="12" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>,
+  Settings: ()=><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.4 3.4l.7.7M11.9 11.9l.7.7M12.6 3.4l-.7.7M4.1 11.9l-.7.7"/></svg>,
+  File:     ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 1.5H3.5a1 1 0 00-1 1v9a1 1 0 001 1h7a1 1 0 001-1V5.5L8 1.5z"/><path d="M8 1.5v4h4"/></svg>,
+  Send:     ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 7L2 2l2.5 5L2 12l10-5z"/></svg>,
+  Plus:     ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2"   strokeLinecap="round"><path d="M7 2v10M2 7h10"/></svg>,
+  Chev:     ()=><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 4.5l3 3 3-3"/></svg>,
+  Close:    ()=><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M3 3l8 8M11 3L3 11"/></svg>,
+  Download: ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M7 2v7M4.5 6.5L7 9l2.5-2.5"/><path d="M2 11.5h10"/></svg>,
+  Upload:   ()=><svg width="26" height="26" viewBox="0 0 28 28" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4.67 18.67v2.66A2.67 2.67 0 007.33 24h13.34a2.67 2.67 0 002.66-2.67v-2.66M18.67 9.33L14 4.67l-4.67 4.66M14 4.67v13.33"/></svg>,
+  UploadSm: ()=><svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 10v2a.5.5 0 00.5.5h9a.5.5 0 00.5-.5v-2M9.5 4.5L7 2l-2.5 2.5M7 2v7"/></svg>,
+  External: ()=><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 2H2v8h8V7M7 2h3v3M5 7l5-5"/></svg>,
+  Check:    ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 7l3.5 3.5 5.5-6"/></svg>,
+  Back:     ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 7H4M6.5 4.5L4 7l2.5 2.5"/></svg>,
+  Prompts:  ()=><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/></svg>,
+  Companies:()=><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="12" height="7" rx="1"/><path d="M5 7V5a1 1 0 011-1h4a1 1 0 011 1v2M2 11h12"/></svg>,
+  Search:   ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3.5"/><path d="M9.5 9.5l2 2"/></svg>,
+  Collapse: ()=><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3L5 7l4 4"/></svg>,
+  Expand:   ()=><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3l4 4-4 4"/></svg>,
+  Edit:     ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.5 2.5l2 2-7 7H2.5v-2l7-7z"/><path d="M8 4l2 2"/></svg>,
+  ZoomIn:   ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="5.5" r="3.5"/><path d="M9 9l2.5 2.5M5.5 3.5v4M3.5 5.5h4"/></svg>,
+  ZoomOut:  ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="5.5" cy="5.5" r="3.5"/><path d="M9 9l2.5 2.5M3.5 5.5h4"/></svg>,
+  FitW:     ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 7h12M3.5 4.5L1 7l2.5 2.5M10.5 4.5L13 7l-2.5 2.5"/></svg>,
+  Print:    ()=><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="8" height="4" rx="0.5"/><path d="M3 8V5h8v3M3 10H2a.5.5 0 01-.5-.5v-4A.5.5 0 012 5h10a.5.5 0 01.5.5v4a.5.5 0 01-.5.5h-1"/><path d="M5 3h4V5H5V3z"/><circle cx="10.5" cy="7" r="0.5" fill="currentColor" stroke="none"/></svg>,
+};
+
+/* ── ATOMS ────────────────────────────────────────────────────────── */
+const PanelLabel = ({children,style={}}) => (
+  <span style={{fontFamily:'var(--font-display)',fontWeight:600,fontSize:'10px',letterSpacing:'0.1em',textTransform:'uppercase',color:T.t3,...style}}>
+    {children}
+  </span>
+);
+const Divider = ({style={}}) => <div style={{height:'1px',background:T.border,...style}} />;
+
+/* ── RESIZE DIVIDER ───────────────────────────────────────────────── */
+function ResizeDivider({ onMouseDown, active }) {
+  const [hov, setHov] = useState(false);
+  const on = hov || active;
+  return (
+    <div
+      onMouseDown={onMouseDown}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        width:'5px', flexShrink:0, cursor:'col-resize', zIndex:10,
+        background: on ? `${T.accent}22` : 'transparent',
+        borderLeft: `1px solid ${on ? T.accent : T.border}`,
+        transition:'background 0.12s, border-color 0.12s',
+        userSelect:'none',
+      }}
+    />
+  );
+}
+
+/* ── SIDEBAR ──────────────────────────────────────────────────────── */
+function Sidebar({ nav, setNav, onSettings, collapsed, onToggle, width }) {
+  const items = [
+    { id:'home',      label:'Dashboard', Icon:I.Home      },
+    { id:'prompts',   label:'Prompts',   Icon:I.Prompts   },
+    { id:'companies', label:'Companies', Icon:I.Companies },
+    { id:'templates', label:'Templates', Icon:I.Template  },
+  ];
+  return (
+    <div className="sidebar" style={{width:collapsed?56:(width||220),minWidth:collapsed?56:(width||220),flexShrink:0,background:'#FDFCFB',borderRight:collapsed?`1px solid ${T.border}`:'none',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 12px',height:'52px',borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+        {!collapsed && <span style={{fontFamily:'var(--font-display)',fontWeight:600,fontSize:'15px',letterSpacing:'-0.02em',color:T.text}}>resumo</span>}
+        <button onClick={onToggle} style={{background:'none',border:'none',cursor:'pointer',color:T.t3,display:'flex',padding:'4px',borderRadius:'3px',marginLeft:collapsed?'auto':0,marginRight:collapsed?'auto':0,lineHeight:0}}>
+          {collapsed ? <I.Expand /> : <I.Collapse />}
+        </button>
+      </div>
+      <nav style={{flex:1,padding:'8px',display:'flex',flexDirection:'column',gap:'1px'}}>
+        {items.map(({id,label,Icon}) => {
+          const active = nav===id;
+          return (
+            <div key={id} onClick={()=>setNav(id)} style={{display:'flex',alignItems:'center',gap:'9px',padding:collapsed?'9px 0':'8px 10px',justifyContent:collapsed?'center':'flex-start',borderRadius:'4px',cursor:'pointer',fontSize:'13px',fontWeight:active?500:400,color:active?T.text:T.t2,background:active?T.accentBg:'transparent',borderLeft:!collapsed?(active?`2px solid ${T.accent}`:'2px solid transparent'):'none',transition:'all 0.1s',userSelect:'none'}}>
+              <span style={{color:active?T.accent:T.t3,flexShrink:0,lineHeight:0}}><Icon /></span>
+              {!collapsed && label}
+            </div>
+          );
+        })}
+      </nav>
+      <div style={{padding:'8px',borderTop:`1px solid ${T.border}`}}>
+        <div onClick={onSettings} style={{display:'flex',alignItems:'center',gap:'9px',padding:collapsed?'9px 0':'8px 10px',justifyContent:collapsed?'center':'flex-start',borderRadius:'4px',cursor:'pointer',color:T.t3,fontSize:'13px',transition:'all 0.1s',userSelect:'none'}}>
+          <span style={{lineHeight:0}}><I.Settings /></span>
+          {!collapsed && 'Settings'}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── PROMPTS VIEW ────────────────────────────────────────────────── */
+function PromptsView() {
+  const [sel, setSel] = useState(0);
+  const [text, setText] = useState(DEFAULT_PROMPT);
+  return (
+    <div style={{flex:1,display:'grid',gridTemplateColumns:'200px 1fr',overflow:'hidden'}}>
+      <div style={{borderRight:`1px solid ${T.border}`,display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'10px 12px',borderBottom:`1px solid ${T.border}`}}>
+          <PanelLabel>Prompts</PanelLabel>
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'4px'}}>
+          {PROMPTS.map((p,i)=>(
+            <div key={p.id} onClick={()=>setSel(i)} style={{padding:'8px 10px',borderRadius:'3px',cursor:'pointer',display:'flex',alignItems:'center',gap:'7px',background:sel===i?T.accentBg:'transparent',borderLeft:sel===i?`2px solid ${T.accent}`:'2px solid transparent'}}>
+              {p.active && <div style={{width:'6px',height:'6px',borderRadius:'50%',background:T.accent,flexShrink:0}} />}
+              <span style={{fontSize:'13px',fontWeight:sel===i?500:400,color:sel===i?T.text:T.t2}}>{p.name}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{padding:'8px',borderTop:`1px solid ${T.border}`}}>
+          <button style={{display:'flex',alignItems:'center',gap:'5px',width:'100%',background:'none',border:`1px solid ${T.border}`,borderRadius:'3px',padding:'7px 10px',fontSize:'12px',cursor:'pointer',color:T.t2,fontFamily:'var(--font-body)'}}>
+            <I.Plus /> New Prompt
+          </button>
+        </div>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div style={{padding:'13px 20px',borderBottom:`1px solid ${T.border}`,flexShrink:0}}>
+          <div style={{fontFamily:'var(--font-display)',fontSize:'14px',fontWeight:600}}>{PROMPTS[sel]?.name}</div>
+        </div>
+        <textarea value={text} onChange={e=>setText(e.target.value)}
+          style={{flex:1,border:'none',outline:'none',padding:'16px 20px',fontSize:'12px',lineHeight:'1.8',fontFamily:'var(--font-mono)',resize:'none',color:T.text,background:'transparent'}} />
+        <div style={{padding:'10px 20px',borderTop:`1px solid ${T.border}`,display:'flex',alignItems:'center',gap:'8px',background:'#F9F8F5',flexShrink:0}}>
+          <button style={{padding:'6px 14px',background:T.primary,color:'#fff',border:'none',borderRadius:'3px',fontSize:'13px',cursor:'pointer',fontFamily:'var(--font-body)',fontWeight:500}}>Save</button>
+          <button style={{display:'flex',alignItems:'center',gap:'5px',padding:'6px 12px',background:T.successBg,color:T.success,border:'1px solid #BBF7D0',borderRadius:'3px',fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',fontWeight:500}}>
+            <div style={{width:'6px',height:'6px',borderRadius:'50%',background:T.success}} /> Active
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── COMPANIES VIEW ───────────────────────────────────────────────── */
+function CompaniesView() {
+  const [search, setSearch] = useState('');
+  const filtered = COMPANIES.filter(c=>c.name.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div style={{flex:1,padding:'20px 24px',overflowY:'auto'}}>
+      <div style={{display:'flex',gap:'8px',marginBottom:'16px'}}>
+        <div style={{flex:1,position:'relative'}}>
+          <span style={{position:'absolute',left:'10px',top:'50%',transform:'translateY(-50%)',color:T.t3,lineHeight:0}}><I.Search /></span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search companies…"
+            style={{width:'100%',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'8px 12px 8px 32px',fontSize:'13px',outline:'none',fontFamily:'var(--font-body)',color:T.text,background:T.surface}} />
+        </div>
+        <button style={{display:'flex',alignItems:'center',gap:'5px',padding:'8px 14px',background:T.primary,color:'#fff',border:'none',borderRadius:'4px',fontSize:'13px',cursor:'pointer',fontFamily:'var(--font-body)',fontWeight:500,whiteSpace:'nowrap'}}>
+          <I.Plus /> Add Company
+        </button>
+      </div>
+      {filtered.length===0 ? (
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:'4px',padding:'40px 24px',textAlign:'center',color:T.t3,fontSize:'13px'}}>
+          {search?'No companies match your search.':'No companies yet. Add your first company above.'}
+        </div>
+      ) : (
+        <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:'4px',overflow:'hidden'}}>
+          {filtered.map((c,i)=>(
+            <div key={c.id}
+              style={{padding:'13px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:i<filtered.length-1?`1px solid ${T.border}`:'none',cursor:'pointer',transition:'background 0.1s'}}
+              onMouseEnter={e=>e.currentTarget.style.background='#F9F8F5'}
+              onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
+              <div>
+                <div style={{fontSize:'13px',fontWeight:500}}>{c.name}</div>
+                <div style={{fontSize:'12px',color:T.t3,marginTop:'2px'}}>{c.role}</div>
+              </div>
+              <div style={{fontSize:'11px',color:T.t3,fontFamily:'var(--font-mono)'}}>{c.date}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── RESUME STATUS BAR ────────────────────────────────────────────── */
+function ResumeBar({ onReplace }) {
+  const r = RESUME_DATA;
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 14px',background:T.surface,border:`1px solid ${T.border}`,borderRadius:'4px'}}>
+      <div style={{display:'flex',alignItems:'center',gap:'7px'}}>
+        <span style={{color:T.t3,lineHeight:0}}><I.File /></span>
+        <span style={{fontSize:'13px',fontWeight:500}}>{r.name}</span>
+        <span style={{padding:'1px 5px',borderRadius:'2px',background:'#F3F4F6',color:T.t2,fontSize:'10px',fontWeight:700,letterSpacing:'0.04em'}}>{r.format}</span>
+        <span style={{fontSize:'11px',color:T.t3,fontFamily:'var(--font-mono)'}}>{r.chars.toLocaleString()} chars</span>
+        <span style={{fontSize:'11px',color:T.t3,fontFamily:'var(--font-mono)'}}>· {r.modified}</span>
+      </div>
+      <button onClick={onReplace} style={{background:'none',border:'none',color:T.t3,fontSize:'12px',cursor:'pointer',textDecoration:'underline',textUnderlineOffset:'2px',fontFamily:'var(--font-body)'}}>Replace</button>
+    </div>
+  );
+}
+
+/* ── TEMPLATE INDICATOR BAR ───────────────────────────────────────── */
+function TemplateBar({ template, onChange }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'8px 14px',background:T.surface,border:`1px solid ${T.border}`,borderRadius:'4px'}}>
+      <div style={{display:'flex',alignItems:'center',gap:'7px'}}>
+        <span style={{color:T.t3,lineHeight:0}}><I.Template /></span>
+        <span style={{fontSize:'12px',color:T.t2}}>Template</span>
+        <span style={{fontSize:'13px',fontWeight:500,color:T.text,whiteSpace:'nowrap'}}>{template}</span>
+      </div>
+      <button onClick={onChange} style={{background:'none',border:'none',color:T.t3,fontSize:'12px',cursor:'pointer',textDecoration:'underline',textUnderlineOffset:'2px',fontFamily:'var(--font-body)'}}>Change</button>
+    </div>
+  );
+}
+
+/* ── COLLAPSIBLE SETTINGS PANEL ───────────────────────────────────── */
+function SettingsPanel({ model, setModel, promptMode, setPromptMode, customPrompt, setCustomPrompt }) {
+  const [open, setOpen] = useState(false);
+  const MODELS = [
+    { val:'claude-haiku-4-5',  label:'Haiku' },
+    { val:'claude-sonnet-4-6', label:'Sonnet' },
+    { val:'claude-opus-4-6',   label:'Opus' },
+  ];
+  const pill = (active) => ({
+    padding:'4px 14px', borderRadius:'3px', fontSize:'12px', cursor:'pointer',
+    fontFamily:'var(--font-body)', transition:'all 0.1s', fontWeight:active?500:400,
+    background:active?T.primary:'none', color:active?'#fff':T.t2,
+    border:active?'none':`1px solid ${T.border}`,
+  });
+  return (
+    <div>
+      <button onClick={()=>setOpen(v=>!v)} style={{display:'flex',alignItems:'center',gap:'5px',background:'none',border:'none',color:T.t2,fontSize:'12px',cursor:'pointer',padding:'4px 0',fontFamily:'var(--font-body)'}}>
+        <span style={{lineHeight:0,transition:'transform 0.15s',display:'inline-flex',transform:open?'rotate(0deg)':'rotate(-90deg)'}}><I.Chev /></span>
+        Settings
+      </button>
+      {open && (
+        <div style={{marginTop:'8px',padding:'14px 16px',background:T.surface,border:`1px solid ${T.border}`,borderRadius:'4px',display:'flex',flexDirection:'column',gap:'14px'}}>
+          <div>
+            <PanelLabel style={{display:'block',marginBottom:'7px'}}>Model</PanelLabel>
+            <div style={{display:'flex',gap:'4px'}}>
+              {MODELS.map(({val,label}) => <button key={val} onClick={()=>setModel(val)} style={pill(model===val)}>{label}</button>)}
+            </div>
+          </div>
+          <div>
+            <PanelLabel style={{display:'block',marginBottom:'7px'}}>Prompt</PanelLabel>
+            <div style={{display:'flex',gap:'4px',marginBottom:promptMode==='custom'?'10px':0}}>
+              {['default','custom'].map(m => (
+                <button key={m} onClick={()=>setPromptMode(m)} style={pill(promptMode===m)}>
+                  {m==='default'?'Use default':'Use custom'}
+                </button>
+              ))}
+            </div>
+            {promptMode==='custom' && (
+              <div style={{display:'flex',flexDirection:'column',gap:'6px'}}>
+                <textarea value={customPrompt} onChange={e=>setCustomPrompt(e.target.value)}
+                  placeholder="Enter custom prompt instructions…"
+                  style={{width:'100%',minHeight:'80px',border:`1px solid ${T.border}`,borderRadius:'3px',padding:'10px',fontSize:'12px',fontFamily:'var(--font-mono)',lineHeight:'1.7',resize:'vertical',outline:'none',color:T.text}} />
+                <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'8px',border:`1px dashed ${T.borderStrong}`,borderRadius:'3px',cursor:'pointer',fontSize:'12px',color:T.t3}}>
+                  <I.UploadSm /> Upload prompt file
+                  <input type="file" style={{display:'none'}} />
+                </label>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── SETUP VIEW ───────────────────────────────────────────────────── */
+function SetupView({ onComplete }) {
+  const [drag, setDrag]   = useState(false);
+  const [error, setError] = useState(false);
+  return (
+    <div style={{height:'100vh',overflowY:'auto',background:T.bg,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'56px 32px'}}>
+      <div style={{width:'100%',maxWidth:'480px',display:'flex',flexDirection:'column',gap:'24px'}}>
+        <div>
+          <h2 style={{fontFamily:'var(--font-display)',fontSize:'18px',fontWeight:600,marginBottom:'6px'}}>Upload your resume</h2>
+          <p style={{fontSize:'13px',color:T.t2,lineHeight:'1.65'}}>Upload once — Resumo stores it locally and tailors it for every role.</p>
+        </div>
+
+        {error && (
+          <div style={{padding:'11px 14px',background:'#FFF5F5',border:'1px solid #FCA5A5',borderRadius:'4px',color:T.danger,fontSize:'13px',lineHeight:'1.6'}}>
+            <strong style={{fontWeight:500}}>Extraction failed.</strong> We couldn't read text from this file. Paste your resume in the fallback below instead.
+          </div>
+        )}
+
+        <div
+          onDragOver={e=>{e.preventDefault();setDrag(true);}}
+          onDragLeave={()=>setDrag(false)}
+          onDrop={e=>{e.preventDefault();setDrag(false);onComplete();}}
+          onClick={()=>setError(v=>!v)}
+          style={{border:`2px dashed ${drag?T.accent:error?T.danger:T.borderStrong}`,borderRadius:'6px',padding:'48px 24px',display:'flex',flexDirection:'column',alignItems:'center',gap:'14px',cursor:'pointer',background:drag?T.accentBg:error?'#FFF5F5':'transparent',transition:'all 0.15s',textAlign:'center'}}
+        >
+          <span style={{color:drag?T.accent:error?T.danger:T.t3,lineHeight:0}}><I.Upload /></span>
+          <div>
+            <div style={{fontSize:'14px',fontWeight:500}}>Drop your PDF or DOCX here</div>
+            <div style={{fontSize:'12px',color:T.t3,marginTop:'3px'}}>or click to browse · {error && <span style={{color:T.danger}}>click again to dismiss error</span>}</div>
+          </div>
+          <div style={{fontSize:'11px',color:T.t3}}>Supports .pdf and .docx</div>
+        </div>
+
+        <div>
+          <PanelLabel style={{display:'block',marginBottom:'8px'}}>Paste fallback</PanelLabel>
+          <textarea placeholder="Paste resume text here if upload fails or for scanned PDFs…"
+            style={{width:'100%',minHeight:'100px',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'10px 12px',fontSize:'13px',fontFamily:'var(--font-body)',lineHeight:'1.65',resize:'vertical',outline:'none',color:T.text}} />
+          <button onClick={onComplete}
+            style={{marginTop:'10px',padding:'9px 24px',background:T.primary,color:'#fff',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:500,cursor:'pointer',fontFamily:'var(--font-body)'}}>
+            Save Resume
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── DASHBOARD / HOME VIEW ────────────────────────────────────────── */
+function HomeView({ setHasResume, jdText, setJdText, onGenerate, activeTemplate, onChangeTemplate }) {
+  const [model, setModel]               = useState('claude-sonnet-4-6');
+  const [promptMode, setPromptMode]     = useState('default');
+  const [customPrompt, setCustomPrompt] = useState('');
+  const canGenerate = jdText.length >= 50;
+  return (
+    <div style={{flex:1,padding:'20px 24px',display:'flex',flexDirection:'column',gap:'10px',overflowY:'auto'}}>
+      <ResumeBar onReplace={()=>setHasResume(false)} />
+      <TemplateBar template={activeTemplate} onChange={onChangeTemplate} />
+
+      <textarea value={jdText} onChange={e=>setJdText(e.target.value)}
+        placeholder="Paste the full job description here…"
+        style={{minHeight:'220px',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'16px',fontSize:'14px',lineHeight:'1.65',resize:'vertical',outline:'none',fontFamily:'var(--font-body)',background:T.surface,color:T.text}} />
+
+      <SettingsPanel model={model} setModel={setModel} promptMode={promptMode} setPromptMode={setPromptMode} customPrompt={customPrompt} setCustomPrompt={setCustomPrompt} />
+
+      <button onClick={canGenerate?onGenerate:undefined}
+        style={{padding:'11px 24px',background:canGenerate?T.primary:T.border,color:canGenerate?'#fff':T.t3,border:'none',borderRadius:'4px',fontSize:'14px',fontWeight:500,cursor:canGenerate?'pointer':'not-allowed',fontFamily:'var(--font-body)',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',transition:'background 0.15s,color 0.15s'}}>
+        <span style={{whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'6px'}}>Generate Tailored Resume <I.Send /></span>
+      </button>
+
+      {!canGenerate && jdText.length > 0 && (
+        <div style={{fontSize:'11px',color:T.t3,textAlign:'center'}}>{50-jdText.length} more characters needed to generate.</div>
+      )}
+      {jdText.length === 0 && (
+        <div style={{fontSize:'11px',color:T.t3,textAlign:'center'}}>Paste a job description above to get started.</div>
+      )}
+    </div>
+  );
+}
+
+/* ── PROCESSING VIEW ──────────────────────────────────────────────── */
+function ProcessingView({ message, onSkip }) {
+  return (
+    <div style={{height:'100vh',background:T.bg,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'20px'}}>
+      <div className="spin" style={{width:'30px',height:'30px',borderRadius:'50%',border:`1.5px solid ${T.border}`,borderTopColor:T.primary}} />
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:'14px',fontWeight:500,marginBottom:'5px'}}>{message}</div>
+        <div style={{fontSize:'12px',color:T.t3}}>Usually under 30 seconds</div>
+      </div>
+      <button onClick={onSkip} style={{background:'none',border:'none',color:T.t3,fontSize:'12px',cursor:'pointer',textDecoration:'underline',textUnderlineOffset:'2px',fontFamily:'var(--font-body)'}}>
+        Skip to result →
+      </button>
+    </div>
+  );
+}
+
+/* ── ICON TOOL BUTTON ─────────────────────────────────────────────── */
+function ToolBtn({ children, onClick, title, disabled, active }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      disabled={disabled}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        display:'flex',alignItems:'center',justifyContent:'center',
+        width:'26px',height:'26px',borderRadius:'3px',border:'none',
+        background: active ? T.accentBg : hov && !disabled ? T.bg : 'none',
+        color: disabled ? T.t3 : active ? T.accent : hov ? T.text : T.t2,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        lineHeight:0, padding:0, transition:'background 0.1s,color 0.1s', flexShrink:0,
+      }}
+    >{children}</button>
+  );
+}
+
+/* ── RESUME RIGHT PANEL ───────────────────────────────────────────── */
+function ResumeRightPanel({ panelWidth }) {
+  const A4_W = 794; // A4 @ 96 dpi
+  const PAD  = 40;  // 20px each side
+  const [zoom, setZoom]         = useState(() => +Math.max(0.4, Math.min(2.0, (panelWidth - 40) / 794)).toFixed(2));
+  const [isFitW, setIsFitW]     = useState(true);
+  const STEP = 0.1, MIN = 0.4, MAX = 2.0;
+
+  const calcFitZoom = () => +Math.max(MIN, Math.min(MAX, (panelWidth - PAD) / A4_W)).toFixed(2);
+
+  // Re-apply fit zoom when panel is resized while fit mode is active
+  React.useEffect(() => { if (isFitW) setZoom(calcFitZoom()); }, [panelWidth]);
+
+  const zoomIn   = () => { setZoom(z => +Math.min(MAX, z+STEP).toFixed(1)); setIsFitW(false); };
+  const zoomOut  = () => { setZoom(z => +Math.max(MIN, z-STEP).toFixed(1)); setIsFitW(false); };
+  const resetZoom = () => { setZoom(1); setIsFitW(false); };
+  const fitWidth  = () => { setZoom(calcFitZoom()); setIsFitW(true); };
+
+  const VDivider = () => <div style={{width:'1px',height:'16px',background:T.border,margin:'0 4px',flexShrink:0}} />;
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',overflow:'hidden',background:T.bg,flex:'none',width:'100%',height:'100%'}}>
+
+      {/* Toolbar */}
+      <div style={{height:'34px',borderBottom:`1px solid ${T.border}`,background:'#FDFCFB',display:'flex',alignItems:'center',padding:'0 10px',gap:'1px',flexShrink:0}}>
+        {/* Zoom controls */}
+        <ToolBtn onClick={zoomOut} title="Zoom out (−)" disabled={zoom<=MIN}><I.ZoomOut /></ToolBtn>
+        <button
+          onClick={resetZoom}
+          title="Reset to 100%"
+          style={{padding:'2px 7px',background:'none',border:`1px solid ${T.border}`,borderRadius:'3px',fontSize:'11px',fontFamily:'var(--font-mono)',cursor:'pointer',color:T.t2,minWidth:'44px',lineHeight:'normal',transition:'border-color 0.1s'}}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=T.accent}
+          onMouseLeave={e=>e.currentTarget.style.borderColor=T.border}
+        >
+          {Math.round(zoom*100)}%
+        </button>
+        <ToolBtn onClick={zoomIn} title="Zoom in (+)" disabled={zoom>=MAX}><I.ZoomIn /></ToolBtn>
+
+        <VDivider />
+
+        <ToolBtn onClick={fitWidth} title="Fit width" active={isFitW}><I.FitW /></ToolBtn>
+
+        <div style={{flex:1}} />
+
+        <ToolBtn title="Print"><I.Print /></ToolBtn>
+        <VDivider />
+        <ToolBtn title="Download PDF">
+          <I.Download />
+        </ToolBtn>
+      </div>
+
+      {/* Scrollable doc — always A4 width, zoom is purely visual */}
+      <div style={{flex:1,overflowY:'auto',overflowX:'auto',padding:'20px'}}>
+        <div style={{zoom:zoom,width:`${A4_W}px`,margin:'0 auto'}}>
+          <div style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:'3px',boxShadow:'0 2px 14px rgba(0,0,0,0.07)',overflow:'hidden',width:`${A4_W}px`}}>
+            <ResumeDoc />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function DocSection({ title, children }) {
+  return (
+    <div style={{marginBottom:'16px'}}>
+      <div style={{fontSize:'9px',fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:T.t2,borderBottom:`1px solid ${T.border}`,paddingBottom:'4px',marginBottom:'8px'}}>{title}</div>
+      {children}
+    </div>
+  );
+}
+function ResumeDoc() {
+  const r = RESULT;
+  return (
+    <div style={{background:'#fff',padding:'28px 32px',fontFamily:'var(--font-body)'}}>
+      <div style={{marginBottom:'16px'}}>
+        <div style={{fontSize:'22px',fontWeight:700,fontFamily:'var(--font-display)',letterSpacing:'-0.025em',lineHeight:1.15}}>{r.name}</div>
+        <div style={{fontSize:'12px',color:T.t2,marginTop:'3px'}}>{r.subtitle}</div>
+        <div style={{fontSize:'11px',color:T.t3,marginTop:'3px',fontFamily:'var(--font-mono)'}}>{r.contact}</div>
+      </div>
+      <DocSection title="Summary">
+        <p style={{fontSize:'12px',lineHeight:'1.65',color:T.text}}>{r.summary}</p>
+      </DocSection>
+      <DocSection title="Experience">
+        {r.experience.map((e,i)=>(
+          <div key={i} style={{marginBottom:'12px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:'8px'}}>
+              <span style={{fontSize:'12px',fontWeight:600}}>{e.role}</span>
+              <span style={{fontSize:'10px',color:T.t3,fontFamily:'var(--font-mono)',whiteSpace:'nowrap'}}>{e.dates}</span>
+            </div>
+            <div style={{fontSize:'11px',color:T.t2,marginBottom:'4px'}}>{e.company}</div>
+            <ul style={{paddingLeft:'13px',margin:0}}>
+              {e.bullets.map((b,j)=><li key={j} style={{fontSize:'11px',lineHeight:'1.55',color:T.text,marginBottom:'2px'}}>{b}</li>)}
+            </ul>
+          </div>
+        ))}
+      </DocSection>
+      <DocSection title="Skills">
+        {r.skills.map((sk,i)=>(
+          <div key={i} style={{fontSize:'11px',marginBottom:'4px',display:'flex',gap:'8px'}}>
+            <span style={{color:T.t2,fontWeight:500,minWidth:'72px',flexShrink:0}}>{sk.category}</span>
+            <span style={{color:T.text}}>{sk.values}</span>
+          </div>
+        ))}
+      </DocSection>
+      <div style={{marginTop:'20px',paddingTop:'12px',borderTop:`1px solid ${T.border}`}}>
+        <p style={{fontSize:'10px',color:T.t3,fontStyle:'italic',textAlign:'center'}}>Preview only. The downloaded PDF uses your selected LaTeX template.</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── RESULT VIEW ──────────────────────────────────────────────────── */
+function ResultView({ onNewApplication }) {
+  const [tab, setTab] = useState('preview');
+  const sectionMeta = {
+    Summary:    [T.accentBg,  T.accent ],
+    Experience: ['#EFF6FF',   '#1D4ED8'],
+    Skills:     [T.successBg, T.success],
+    Education:  ['#FFF7ED',   '#C2410C'],
+  };
+  const tabs = [['preview','Preview'],['changes',`What Changed (${RESULT.changes.length})`]];
+  return (
+    <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+      <div style={{display:'flex',borderBottom:`1px solid ${T.border}`,padding:'0 24px',background:T.surface,flexShrink:0}}>
+        {tabs.map(([id,label])=>(
+          <button key={id} onClick={()=>setTab(id)} style={{padding:'12px 16px',border:'none',background:'none',fontSize:'13px',fontWeight:tab===id?600:400,color:tab===id?T.text:T.t3,cursor:'pointer',fontFamily:'var(--font-body)',borderBottom:tab===id?`2px solid ${T.text}`:'2px solid transparent',marginBottom:'-1px',transition:'all 0.1s'}}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{flex:1,overflow:'auto',padding:'20px 24px'}}>
+        {tab==='preview' ? (
+          <div style={{maxWidth:'680px',margin:'0 auto',background:T.surface,border:`1px solid ${T.border}`,borderRadius:'3px',boxShadow:'0 2px 14px rgba(0,0,0,0.07)',overflow:'hidden'}}>
+            <ResumeDoc />
+          </div>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',gap:'8px',maxWidth:'680px',margin:'0 auto'}}>
+            {RESULT.changes.map((c,i)=>{
+              const [bg,col] = sectionMeta[c.section]||['#F3F4F6','#374151'];
+              return (
+                <div key={i} style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:'4px',padding:'14px 16px'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:'8px',marginBottom:'10px'}}>
+                    <span style={{padding:'2px 7px',borderRadius:'2px',fontSize:'10px',fontWeight:700,background:bg,color:col,letterSpacing:'0.06em'}}>{c.section.toUpperCase()}</span>
+                    {c.ctx && <span style={{fontSize:'12px',color:T.t2}}>{c.ctx}</span>}
+                    <span style={{marginLeft:'auto',fontSize:'11px',color:T.t3,fontStyle:'italic'}}>{c.action}</span>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px'}}>
+                    {[['Before',c.before,T.t2,400],['After',c.after,T.text,500]].map(([lbl,txt,tc,fw])=>(
+                      <div key={lbl}>
+                        <PanelLabel style={{display:'block',marginBottom:'4px'}}>{lbl}</PanelLabel>
+                        <div style={{fontSize:'12px',color:tc,lineHeight:'1.55',fontWeight:fw}}>{txt}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <div style={{padding:'11px 24px',borderTop:`1px solid ${T.border}`,background:T.surface,display:'flex',gap:'8px',alignItems:'center',flexShrink:0}}>
+        <button style={{display:'flex',alignItems:'center',gap:'6px',background:T.primary,color:'#fff',border:'none',borderRadius:'4px',padding:'8px 16px',fontSize:'13px',fontWeight:500,cursor:'pointer',fontFamily:'var(--font-body)'}}>
+          <I.Download /> Download PDF
+        </button>
+        <button style={{display:'flex',alignItems:'center',gap:'5px',background:'none',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'8px 14px',fontSize:'13px',color:T.t2,cursor:'pointer',fontFamily:'var(--font-body)'}}>
+          Open in Overleaf <I.External />
+        </button>
+        <button onClick={onNewApplication} style={{background:'none',border:'none',color:T.t3,fontSize:'13px',cursor:'pointer',textDecoration:'underline',textUnderlineOffset:'2px',fontFamily:'var(--font-body)',padding:'8px 0'}}>
+          New Application
+        </button>
+        <span style={{marginLeft:'auto',fontSize:'12px',color:T.t3}}>Tailored for <strong style={{color:T.t2,fontWeight:500}}>{RESULT.company}</strong></span>
+      </div>
+    </div>
+  );
+}
+
+/* ── TEMPLATE CARD ────────────────────────────────────────────────── */
+function TemplateCard({ template, active, onSetActive, onEdit, onDelete }) {
+  const { name, type } = template;
+  return (
+    <div style={{background:active?T.accentBg:T.surface,border:`1px solid ${active?T.accent:T.border}`,borderRadius:'4px',padding:'14px 18px',display:'flex',alignItems:'center',justifyContent:'space-between',transition:'border-color 0.1s,background 0.1s'}}>
+      <div style={{display:'flex',alignItems:'center',gap:'10px'}}>
+        {active && <span style={{lineHeight:0,color:T.accent,flexShrink:0}}><I.Check /></span>}
+        <span style={{fontSize:'13px',fontWeight:active?500:400,whiteSpace:'nowrap'}}>{name}</span>
+        <span style={{padding:'1px 6px',borderRadius:'2px',fontSize:'10px',fontWeight:700,letterSpacing:'0.05em',background:type==='builtin'?'#F3F4F6':T.accentBg,color:type==='builtin'?T.t2:T.accent,whiteSpace:'nowrap',flexShrink:0}}>
+          {type==='builtin'?'BUILT-IN':'CUSTOM'}
+        </span>
+      </div>
+      <div style={{display:'flex',gap:'6px',alignItems:'center',flexShrink:0,marginLeft:'12px'}}>
+        {active
+          ? <span style={{fontSize:'12px',color:T.accent,fontWeight:500}}>Active</span>
+          : <button onClick={onSetActive} style={{padding:'5px 12px',border:`1px solid ${T.border}`,borderRadius:'3px',background:'none',color:T.text,fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',fontWeight:500}}>Set as Active</button>
+        }
+        <button onClick={onEdit} title="Edit template" style={{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',border:`1px solid ${T.border}`,borderRadius:'3px',background:'none',color:T.t2,fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',lineHeight:0}}>
+          <I.Edit /><span style={{lineHeight:'normal',fontSize:'12px'}}>Edit</span>
+        </button>
+        {type==='custom' && (
+          <button onClick={onDelete} style={{padding:'5px 10px',border:'1px solid #FCA5A5',borderRadius:'3px',background:'#FFF5F5',color:T.danger,fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)'}}>Delete</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── EDIT TEMPLATE MODAL ─────────────────────────────────────────── */
+function EditTemplateModal({ template, onSave, onClose }) {
+  const [name, setName]   = useState(template.name);
+  const [mode, setMode]   = useState(template.latex ? 'paste' : 'paste');
+  const [latex, setLatex] = useState(template.latex || '');
+  const [saved, setSaved] = useState(false);
+  const isBuiltin = template.type === 'builtin';
+  const canSave = name.trim().length > 0;
+  const hasChanges = name !== template.name || latex !== (template.latex || '');
+
+  const pill = (a) => ({padding:'4px 14px',borderRadius:'3px',fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',transition:'all 0.1s',background:a?T.primary:'none',color:a?'#fff':T.t2,border:a?'none':`1px solid ${T.border}`});
+
+  const handleSave = () => {
+    if (!canSave) return;
+    onSave({ ...template, name: name.trim(), latex });
+    setSaved(true);
+    setTimeout(onClose, 500);
+  };
+
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(17,18,27,0.32)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="fade" style={{background:T.surface,borderRadius:'6px',width:'540px',maxWidth:'92vw',maxHeight:'88vh',display:'flex',flexDirection:'column',border:`1px solid ${T.border}`,boxShadow:'0 8px 40px rgba(0,0,0,0.14)',overflow:'hidden'}}>
+
+        {/* Header */}
+        <div style={{padding:'17px 24px',borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+          <div>
+            <h2 style={{fontFamily:'var(--font-display)',fontSize:'15px',fontWeight:600,marginBottom:'2px'}}>Edit Template</h2>
+            <div style={{fontSize:'11px',color:T.t3}}>{template.name}</div>
+          </div>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:T.t3,display:'flex',padding:'2px',lineHeight:0}}><I.Close /></button>
+        </div>
+
+        {/* Body */}
+        <div style={{padding:'20px 24px',display:'flex',flexDirection:'column',gap:'16px',overflowY:'auto',flex:1}}>
+
+          {isBuiltin && (
+            <div style={{padding:'10px 12px',background:'#FFFBEB',border:'1px solid #FDE68A',borderRadius:'4px',fontSize:'12px',color:'#92400E',lineHeight:'1.55'}}>
+              <strong style={{fontWeight:600}}>Built-in template</strong> — you can rename it and add a custom LaTeX source to override the default.
+            </div>
+          )}
+
+          {/* Name */}
+          <div>
+            <label style={{display:'block',fontSize:'12px',fontWeight:500,color:T.t2,marginBottom:'6px'}}>Template name</label>
+            <input
+              value={name}
+              onChange={e=>setName(e.target.value)}
+              style={{width:'100%',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'8px 12px',fontSize:'13px',outline:'none',fontFamily:'var(--font-body)',color:T.text,background:T.surface}}
+              onKeyDown={e=>{if(e.key==='Enter')handleSave();}}
+            />
+          </div>
+
+          {/* LaTeX source */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'8px'}}>
+              <label style={{fontSize:'12px',fontWeight:500,color:T.t2}}>LaTeX source</label>
+              {!latex && <span style={{fontSize:'11px',color:T.t3}}>Optional — leave blank to use the built-in</span>}
+            </div>
+            <div style={{display:'flex',gap:'4px',marginBottom:'10px'}}>
+              <button style={pill(mode==='paste')}  onClick={()=>setMode('paste')}>Paste LaTeX</button>
+              <button style={pill(mode==='upload')} onClick={()=>setMode('upload')}>Upload .tex</button>
+            </div>
+
+            {mode==='paste' ? (
+              <div style={{position:'relative'}}>
+                <textarea
+                  value={latex}
+                  onChange={e=>setLatex(e.target.value)}
+                  placeholder={`\\documentclass{article}\n% Paste your full LaTeX template here…`}
+                  style={{width:'100%',minHeight:'160px',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'10px 12px',fontSize:'12px',fontFamily:'var(--font-mono)',lineHeight:'1.7',resize:'vertical',outline:'none',color:T.text,background:T.surface}}
+                />
+                {latex.length > 0 && (
+                  <button
+                    onClick={()=>setLatex('')}
+                    style={{position:'absolute',top:'8px',right:'8px',background:'none',border:'none',cursor:'pointer',color:T.t3,lineHeight:0,padding:'2px'}}
+                    title="Clear LaTeX">
+                    <I.Close />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <label style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'10px',padding:'28px 24px',border:`2px dashed ${T.borderStrong}`,borderRadius:'4px',cursor:'pointer',textAlign:'center'}}>
+                <span style={{color:T.t3,lineHeight:0}}><I.Upload /></span>
+                <div>
+                  <div style={{fontSize:'13px',fontWeight:500}}>Drop your .tex file here</div>
+                  <div style={{fontSize:'12px',color:T.t3,marginTop:'3px'}}>or click to browse</div>
+                </div>
+                <input type="file" accept=".tex" style={{display:'none'}} onChange={e=>{
+                  const f = e.target.files[0];
+                  if (!f) return;
+                  const reader = new FileReader();
+                  reader.onload = ev => { setLatex(ev.target.result); setMode('paste'); };
+                  reader.readAsText(f);
+                }} />
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{padding:'14px 24px',borderTop:`1px solid ${T.border}`,background:'#F9F8F5',display:'flex',gap:'8px',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+          <div style={{fontSize:'12px',color:T.t3}}>
+            {saved ? (
+              <span style={{color:T.success,display:'flex',alignItems:'center',gap:'4px'}}><I.Check /> Saved</span>
+            ) : hasChanges ? 'Unsaved changes' : ''}
+          </div>
+          <div style={{display:'flex',gap:'8px'}}>
+            <button onClick={onClose} style={{padding:'7px 16px',border:`1px solid ${T.border}`,borderRadius:'4px',background:'none',color:T.t2,fontSize:'13px',cursor:'pointer',fontFamily:'var(--font-body)'}}>Cancel</button>
+            <button
+              onClick={handleSave}
+              disabled={!canSave}
+              style={{padding:'7px 20px',background:canSave?T.primary:T.border,color:canSave?'#fff':T.t3,border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:500,cursor:canSave?'pointer':'not-allowed',fontFamily:'var(--font-body)',transition:'all 0.1s'}}>
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── ADD TEMPLATE MODAL ───────────────────────────────────────────── */
+function AddTemplateModal({ onSave, onClose }) {
+  const [name, setName]   = useState('');
+  const [mode, setMode]   = useState('paste');
+  const [latex, setLatex] = useState('');
+  const canSave = name.trim().length > 0 && (mode==='upload' || latex.trim().length > 0);
+  const pill = (a) => ({padding:'4px 14px',borderRadius:'3px',fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',transition:'all 0.1s',background:a?T.primary:'none',color:a?'#fff':T.t2,border:a?'none':`1px solid ${T.border}`});
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(17,18,27,0.32)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300}} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="fade" style={{background:T.surface,borderRadius:'6px',width:'520px',maxWidth:'90vw',border:`1px solid ${T.border}`,boxShadow:'0 8px 40px rgba(0,0,0,0.14)',overflow:'hidden'}}>
+        <div style={{padding:'17px 24px',borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <h2 style={{fontFamily:'var(--font-display)',fontSize:'15px',fontWeight:600}}>Add Template</h2>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:T.t3,display:'flex',padding:'2px',lineHeight:0}}><I.Close /></button>
+        </div>
+        <div style={{padding:'20px 24px',display:'flex',flexDirection:'column',gap:'16px'}}>
+          <div>
+            <label style={{display:'block',fontSize:'12px',fontWeight:500,color:T.t2,marginBottom:'6px'}}>Template name</label>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. My Custom Template"
+              style={{width:'100%',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'8px 12px',fontSize:'13px',outline:'none',fontFamily:'var(--font-body)',color:T.text}} />
+          </div>
+          <div>
+            <label style={{display:'block',fontSize:'12px',fontWeight:500,color:T.t2,marginBottom:'8px'}}>LaTeX source</label>
+            <div style={{display:'flex',gap:'4px',marginBottom:'10px'}}>
+              <button style={pill(mode==='paste')}  onClick={()=>setMode('paste')}>Paste LaTeX</button>
+              <button style={pill(mode==='upload')} onClick={()=>setMode('upload')}>Upload .tex file</button>
+            </div>
+            {mode==='paste' ? (
+              <textarea value={latex} onChange={e=>setLatex(e.target.value)}
+                placeholder={`\\documentclass{article}\n% Paste your full LaTeX template here…`}
+                style={{width:'100%',minHeight:'140px',border:`1px solid ${T.border}`,borderRadius:'4px',padding:'10px 12px',fontSize:'12px',fontFamily:'var(--font-mono)',lineHeight:'1.7',resize:'vertical',outline:'none',color:T.text}} />
+            ) : (
+              <label style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'10px',padding:'32px 24px',border:`2px dashed ${T.borderStrong}`,borderRadius:'4px',cursor:'pointer',textAlign:'center'}}>
+                <span style={{color:T.t3,lineHeight:0}}><I.Upload /></span>
+                <div>
+                  <div style={{fontSize:'13px',fontWeight:500}}>Drop your .tex file here</div>
+                  <div style={{fontSize:'12px',color:T.t3,marginTop:'3px'}}>or click to browse</div>
+                </div>
+                <input type="file" accept=".tex" style={{display:'none'}} />
+              </label>
+            )}
+          </div>
+        </div>
+        <div style={{padding:'14px 24px',borderTop:`1px solid ${T.border}`,background:'#F9F8F5',display:'flex',gap:'8px',justifyContent:'flex-end'}}>
+          <button onClick={onClose} style={{padding:'7px 16px',border:`1px solid ${T.border}`,borderRadius:'4px',background:'none',color:T.t2,fontSize:'13px',cursor:'pointer',fontFamily:'var(--font-body)'}}>Cancel</button>
+          <button onClick={()=>canSave&&onSave({name:name.trim(),latex})}
+            style={{padding:'7px 18px',background:canSave?T.primary:T.border,color:canSave?'#fff':T.t3,border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:500,cursor:canSave?'pointer':'not-allowed',fontFamily:'var(--font-body)',transition:'all 0.1s'}}>
+            Save Template
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── TEMPLATES VIEW ───────────────────────────────────────────────── */
+function TemplatesView({ activeTemplate, setActiveTemplate }) {
+  const [templates, setTemplates] = useState(INIT_TEMPLATES);
+  const [showAddModal, setShowAddModal]   = useState(false);
+  const [editTarget,   setEditTarget]     = useState(null); // template being edited
+
+  const handleSetActive = (id) => {
+    const tpl = templates.find(t=>t.id===id);
+    if (tpl) setActiveTemplate(tpl.name);
+  };
+  const handleDelete = (id) => setTemplates(ts=>ts.filter(t=>t.id!==id));
+  const handleAdd = ({name,latex}) => {
+    setTemplates(ts=>[...ts,{id:Math.max(...ts.map(t=>t.id),0)+1,name,latex,type:'custom'}]);
+    setShowAddModal(false);
+  };
+  const handleEditSave = (updated) => {
+    setTemplates(ts=>ts.map(t=>t.id===updated.id ? updated : t));
+    // If this was the active template and its name changed, update the active name
+    if (activeTemplate === templates.find(t=>t.id===updated.id)?.name) {
+      setActiveTemplate(updated.name);
+    }
+    setEditTarget(null);
+  };
+
+  return (
+    <div style={{flex:1,padding:'20px 24px',overflowY:'auto'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'18px'}}>
+        <div>
+          <h2 style={{fontFamily:'var(--font-display)',fontSize:'15px',fontWeight:600,marginBottom:'3px'}}>Templates</h2>
+          <p style={{fontSize:'12px',color:T.t2}}>Select a LaTeX template for your generated PDFs.</p>
+        </div>
+        <button onClick={()=>setShowAddModal(true)} style={{display:'flex',alignItems:'center',gap:'5px',padding:'8px 14px',background:T.primary,color:'#fff',border:'none',borderRadius:'4px',fontSize:'13px',fontWeight:500,cursor:'pointer',fontFamily:'var(--font-body)',flexShrink:0}}>
+          <I.Plus /> Add Template
+        </button>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:'8px'}}>
+        {templates.map(t=>(
+          <TemplateCard
+            key={t.id}
+            template={t}
+            active={t.name===activeTemplate}
+            onSetActive={()=>handleSetActive(t.id)}
+            onEdit={()=>setEditTarget(t)}
+            onDelete={()=>handleDelete(t.id)}
+          />
+        ))}
+      </div>
+      {showAddModal && <AddTemplateModal onSave={handleAdd} onClose={()=>setShowAddModal(false)} />}
+      {editTarget   && <EditTemplateModal template={editTarget} onSave={handleEditSave} onClose={()=>setEditTarget(null)} />}
+    </div>
+  );
+}
+
+/* ── SETTINGS OVERLAY ─────────────────────────────────────────────── */
+function SettingsModal({ onClose, onGoTemplates, activeTemplate }) {
+  const [model, setModel]               = useState('claude-sonnet-4-6');
+  const [promptMode, setPromptMode]     = useState('default');
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [confirmReset, setConfirmReset] = useState(false);
+  const MODELS = [
+    { val:'claude-haiku-4-5',  label:'Haiku',  cost:'~$0.01' },
+    { val:'claude-sonnet-4-6', label:'Sonnet', cost:'~$0.05' },
+    { val:'claude-opus-4-6',   label:'Opus',   cost:'~$0.25' },
+  ];
+  const pill = (a) => ({flex:1,padding:'6px 8px',borderRadius:'3px',fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',transition:'all 0.1s',textAlign:'center',background:a?T.primary:'none',color:a?'#fff':T.t2,border:a?'none':`1px solid ${T.border}`});
+  const pill2 = (a) => ({padding:'5px 14px',borderRadius:'3px',fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',transition:'all 0.1s',background:a?T.primary:'none',color:a?'#fff':T.t2,border:a?'none':`1px solid ${T.border}`});
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(17,18,27,0.32)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:200}}>
+      <div className="fade" style={{background:T.surface,borderRadius:'6px',width:'480px',maxWidth:'90vw',border:`1px solid ${T.border}`,boxShadow:'0 8px 40px rgba(0,0,0,0.14)',maxHeight:'90vh',display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'17px 24px',borderBottom:`1px solid ${T.border}`,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+          <h2 style={{fontFamily:'var(--font-display)',fontSize:'15px',fontWeight:600}}>Settings</h2>
+          <button onClick={onClose} style={{background:'none',border:'none',cursor:'pointer',color:T.t3,display:'flex',padding:'2px',lineHeight:0}}><I.Close /></button>
+        </div>
+
+        <div style={{padding:'20px 24px',display:'flex',flexDirection:'column',gap:'18px',overflowY:'auto'}}>
+          {/* Resume */}
+          <SettRow label="Resume" sub={`${RESUME_DATA.name} · ${RESUME_DATA.format} · ${RESUME_DATA.chars.toLocaleString()} chars`}>
+            <GhostBtn>Replace</GhostBtn>
+          </SettRow>
+          <Divider />
+
+          {/* Model */}
+          <div>
+            <div style={{fontSize:'13px',fontWeight:500,marginBottom:'8px'}}>Model</div>
+            <div style={{display:'flex',gap:'4px'}}>
+              {MODELS.map(({val,label,cost})=>(
+                <button key={val} onClick={()=>setModel(val)} style={pill(model===val)}>
+                  <div style={{fontWeight:model===val?500:400}}>{label}</div>
+                  <div style={{fontSize:'10px',opacity:0.65,marginTop:'1px'}}>{cost}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <Divider />
+
+          {/* Prompt config */}
+          <div>
+            <div style={{fontSize:'13px',fontWeight:500,marginBottom:'8px'}}>Prompt</div>
+            <div style={{display:'flex',gap:'4px',marginBottom:promptMode==='custom'?'8px':0}}>
+              <button style={pill2(promptMode==='default')} onClick={()=>setPromptMode('default')}>Use default</button>
+              <button style={pill2(promptMode==='custom')} onClick={()=>setPromptMode('custom')}>Use custom</button>
+            </div>
+            {promptMode==='custom' && (
+              <textarea value={customPrompt} onChange={e=>setCustomPrompt(e.target.value)}
+                placeholder="Custom prompt instructions…"
+                style={{width:'100%',minHeight:'70px',border:`1px solid ${T.border}`,borderRadius:'3px',padding:'8px 10px',fontSize:'12px',fontFamily:'var(--font-mono)',resize:'vertical',outline:'none',color:T.text}} />
+            )}
+          </div>
+          <Divider />
+
+          {/* Active template */}
+          <SettRow label="Active Template" sub={activeTemplate}>
+            <button onClick={()=>{onGoTemplates();onClose();}} style={{padding:'5px 12px',border:`1px solid ${T.border}`,borderRadius:'3px',background:'none',color:T.t2,fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)'}}>
+              Manage →
+            </button>
+          </SettRow>
+          <Divider />
+
+          {/* Applications folder */}
+          <SettRow label="Applications folder" sub="./applications">
+            <GhostBtn>Change</GhostBtn>
+          </SettRow>
+          <Divider />
+
+          {/* Reset */}
+          {!confirmReset ? (
+            <SettRow label="Reset app" sub="Clears data/ folder — does not delete applications">
+              <button onClick={()=>setConfirmReset(true)} style={{padding:'5px 12px',border:'1px solid #FCA5A5',borderRadius:'3px',background:'#FFF5F5',color:T.danger,fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',fontWeight:500}}>Reset</button>
+            </SettRow>
+          ) : (
+            <div style={{padding:'13px 16px',background:'#FFF5F5',border:'1px solid #FCA5A5',borderRadius:'4px'}}>
+              <div style={{fontSize:'13px',fontWeight:500,color:T.danger,marginBottom:'5px'}}>Are you sure?</div>
+              <div style={{fontSize:'12px',color:T.t2,marginBottom:'12px',lineHeight:'1.6'}}>This clears your stored resume and settings. Your applications folder is not affected.</div>
+              <div style={{display:'flex',gap:'6px'}}>
+                <button onClick={()=>setConfirmReset(false)} style={{padding:'5px 12px',border:`1px solid ${T.border}`,borderRadius:'3px',background:'none',color:T.t2,fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)'}}>Cancel</button>
+                <button style={{padding:'5px 14px',border:'none',borderRadius:'3px',background:T.danger,color:'#fff',fontSize:'12px',cursor:'pointer',fontFamily:'var(--font-body)',fontWeight:500}}>Yes, reset everything</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettRow({ label, sub, children }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'16px'}}>
+      <div>
+        <div style={{fontSize:'13px',fontWeight:500}}>{label}</div>
+        {sub && <div style={{fontSize:'11px',color:T.t3,marginTop:'2px'}}>{sub}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+function GhostBtn({ children, onClick }) {
+  return (
+    <button onClick={onClick} style={{padding:'5px 12px',border:`1px solid ${T.border}`,borderRadius:'3px',background:'none',color:T.t2,fontSize:'13px',cursor:'pointer',fontFamily:'var(--font-body)'}}>
+      {children}
+    </button>
+  );
+}
+
+/* ── APP ROOT ─────────────────────────────────────────────────────── */
+function App() {
+  const [nav, setNav]                   = useState('home');
+  const [screen, setScreen]             = useState('dashboard');
+  const [hasResume, setHasResume]       = useState(true);
+  const [jdText, setJdText]             = useState('');
+  const [showSettings, setShowSettings] = useState(false);
+  const [collapsed, setCollapsed]       = useState(false);
+  const [procMsg, setProcMsg]           = useState('Analysing job description…');
+  const [activeTemplate, setActiveTemplate] = useState("Jake's Resume");
+  const timers = useRef([]);
+  const [sidebarW, setSidebarW]       = useState(220);
+  const [rightPanelW, setRightPanelW] = useState(500);
+  const [activeDrag, setActiveDrag]   = useState(null);
+  const dragRef = useRef(null);
+
+  const clearTimers = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+
+  const handleGenerate = () => {
+    setScreen('processing'); setProcMsg('Analysing job description…');
+    clearTimers();
+    timers.current.push(setTimeout(()=>setProcMsg('Claude is tailoring your resume…'), 2500));
+    timers.current.push(setTimeout(()=>setProcMsg('Compiling PDF…'), 5500));
+    timers.current.push(setTimeout(()=>setScreen('result'), 8000));
+  };
+
+  const handleNewApp = () => { clearTimers(); setJdText(''); setScreen('dashboard'); setNav('home'); };
+  const handleSkip   = () => { clearTimers(); setScreen('result'); };
+
+  const startDrag = (type) => (e) => {
+    e.preventDefault();
+    dragRef.current = { type, startX: e.clientX, startW: type==='sidebar' ? sidebarW : rightPanelW };
+    setActiveDrag(type);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(()=>()=>clearTimers(), []);
+
+  useEffect(()=>{
+    const onMove = (e) => {
+      if (!dragRef.current) return;
+      const { type, startX, startW } = dragRef.current;
+      const dx = e.clientX - startX;
+      if (type==='sidebar') setSidebarW(Math.max(160, Math.min(400, startW + dx)));
+      if (type==='right')   setRightPanelW(Math.max(220, Math.min(720, startW - dx)));
+    };
+    const onUp = () => {
+      if (!dragRef.current) return;
+      dragRef.current = null;
+      setActiveDrag(null);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup',   onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup',   onUp);
+    };
+  }, []);
+
+  /* ── Full-screen states (no nav) */
+  if (!hasResume)            return <SetupView onComplete={()=>setHasResume(true)} />;
+  if (screen==='processing') return <ProcessingView message={procMsg} onSkip={handleSkip} />;
+
+  /* ── Main content */
+  const renderContent = () => {
+    if (nav==='prompts')   return <PromptsView />;
+    if (nav==='companies')  return <CompaniesView />;
+    if (nav==='templates')  return <TemplatesView activeTemplate={activeTemplate} setActiveTemplate={setActiveTemplate} />;
+    if (screen==='result')  return <ResultView onNewApplication={handleNewApp} />;
+    return (
+      <HomeView
+        setHasResume={setHasResume}
+        jdText={jdText} setJdText={setJdText}
+        onGenerate={handleGenerate}
+        activeTemplate={activeTemplate}
+        onChangeTemplate={()=>setNav('templates')}
+      />
+    );
+  };
+
+  const headerLabel = () => {
+    if (nav==='prompts')   return 'Prompts';
+    if (nav==='companies') return 'Companies';
+    if (nav==='templates') return 'Templates';
+    if (screen==='result') return `Tailored for ${RESULT.company}`;
+    return 'New Application';
+  };
+
+  const showRightPanel = nav === 'home';
+
+  return (
+    <div style={{display:'flex',height:'100vh',overflow:'hidden'}}>
+      <Sidebar nav={nav} setNav={id=>{setNav(id); if(id==='home')setScreen('dashboard');}} onSettings={()=>setShowSettings(true)} collapsed={collapsed} onToggle={()=>setCollapsed(v=>!v)} width={sidebarW} />
+      {!collapsed && <ResizeDivider onMouseDown={startDrag('sidebar')} active={activeDrag==='sidebar'} />}
+
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden',minWidth:450}}>
+        <div style={{padding:'0 24px',height:'52px',borderBottom:`1px solid ${T.border}`,background:T.surface,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+          <PanelLabel>{headerLabel()}</PanelLabel>
+          {screen==='result' && nav==='home' && (
+            <button onClick={handleNewApp} style={{display:'flex',alignItems:'center',gap:'4px',background:'none',border:'none',fontSize:'12px',color:T.t3,cursor:'pointer',fontFamily:'var(--font-body)'}}>
+              <I.Back /> New Application
+            </button>
+          )}
+        </div>
+        <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+          {renderContent()}
+        </div>
+      </div>
+
+      {showRightPanel && <>
+        <ResizeDivider onMouseDown={startDrag('right')} active={activeDrag==='right'} />
+        <div style={{width:rightPanelW,flexShrink:0,display:'flex',flexDirection:'column',overflow:'hidden',background:T.bg}}>
+          <div style={{padding:'0 16px',height:'52px',borderBottom:`1px solid ${T.border}`,background:T.surface,display:'flex',alignItems:'center',justifyContent:'space-between',flexShrink:0}}>
+            <PanelLabel>Resume Preview</PanelLabel>
+            <span style={{fontSize:'11px',color:T.t3,fontFamily:'var(--font-mono)'}}>Uploaded · Jun 10</span>
+          </div>
+          <ResumeRightPanel panelWidth={rightPanelW} />
+        </div>
+      </>}
+
+      {showSettings && (
+        <SettingsModal
+          onClose={()=>setShowSettings(false)}
+          onGoTemplates={()=>setNav('templates')}
+          activeTemplate={activeTemplate}
+        />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
