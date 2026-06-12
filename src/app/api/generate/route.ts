@@ -63,7 +63,8 @@ export async function POST(request: Request) {
     const message = await client.messages.create({
       model: selectedModel,
       max_tokens: useThinking ? 8000 : 4096,
-      ...(useThinking ? { thinking: { type: 'enabled', budget_tokens: 3000 } } : {}),
+      .      // Opus 4.8 requires adaptive thinking; the installed SDK's types predate it.
+      ...(useThinking ? { thinking: { type: 'adaptive' } as unknown as Anthropic.ThinkingConfigParam } : {}),
       system: systemPrompt,
       messages: [
         {
