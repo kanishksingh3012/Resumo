@@ -5,6 +5,8 @@ import { T } from '@/lib/tokens';
 import { I } from './icons';
 import { KEYS, load, save } from '@/lib/storage';
 import { DEFAULT_TEMPLATE_LATEX } from '@/lib/defaultTemplate';
+import { SAMPLE_TEMPLATE_LATEX } from '@/lib/samples';
+import { downloadTextFile } from '@/lib/export';
 import type { Template } from '@/lib/types';
 
 const INIT_TEMPLATES: Template[] = [
@@ -67,7 +69,11 @@ function EditTemplateModal({ template, onSave, onClose }: { template: Template; 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
               <label style={{ fontSize: '12px', fontWeight: 500, color: T.t2 }}>LaTeX source</label>
-              {!latex && <span style={{ fontSize: '11px', color: T.t3 }}>Optional — leave blank to use the built-in</span>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                {!latex && <span style={{ fontSize: '11px', color: T.t3 }}>Optional — leave blank to use the built-in</span>}
+                <button onClick={() => { setLatex(SAMPLE_TEMPLATE_LATEX); setMode('paste'); }} style={{ background: 'none', border: 'none', color: T.accent, fontSize: '11px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500, padding: 0 }}>Insert sample</button>
+                <button onClick={() => downloadTextFile('resumo-sample-template.tex', SAMPLE_TEMPLATE_LATEX, 'application/x-tex')} style={{ background: 'none', border: 'none', color: T.accent, fontSize: '11px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500, padding: 0 }}>Download sample</button>
+              </div>
             </div>
             <div style={{ display: 'flex', gap: '4px', marginBottom: '10px' }}>
               <button style={pill(mode === 'paste')}  onClick={() => setMode('paste')}>Paste LaTeX</button>
@@ -131,12 +137,21 @@ function AddTemplateModal({ onSave, onClose }: { onSave: (t: { name: string; lat
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.t3, display: 'flex', padding: '2px', lineHeight: 0 }}><I.Close /></button>
         </div>
         <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ padding: '10px 12px', background: T.accentBg, border: `1px solid ${T.accent}`, borderRadius: '4px', fontSize: '12px', color: T.t2, lineHeight: '1.55' }}>
+            Use a complete, single-page LaTeX document (<code style={{ fontFamily: 'var(--font-mono)' }}>{'\\documentclass … \\end{document}'}</code>). Not sure of the format? Click <strong style={{ fontWeight: 600 }}>Insert sample</strong> below for a known-good starting point.
+          </div>
           <div>
             <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: T.t2, marginBottom: '6px' }}>Template name</label>
             <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. My Custom Template" style={{ width: '100%', border: `1px solid ${T.border}`, borderRadius: '4px', padding: '8px 12px', fontSize: '13px', outline: 'none', fontFamily: 'var(--font-body)', color: T.text }} />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: T.t2, marginBottom: '8px' }}>LaTeX source</label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 500, color: T.t2 }}>LaTeX source</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button onClick={() => { setLatex(SAMPLE_TEMPLATE_LATEX); setMode('paste'); }} style={{ background: 'none', border: 'none', color: T.accent, fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500, padding: 0 }}>Insert sample</button>
+                <button onClick={() => downloadTextFile('resumo-sample-template.tex', SAMPLE_TEMPLATE_LATEX, 'application/x-tex')} style={{ background: 'none', border: 'none', color: T.accent, fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500, padding: 0 }}>Download sample</button>
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: '4px', marginBottom: '10px' }}>
               <button style={pill(mode === 'paste')}  onClick={() => setMode('paste')}>Paste LaTeX</button>
               <button style={pill(mode === 'upload')} onClick={() => setMode('upload')}>Upload .tex file</button>

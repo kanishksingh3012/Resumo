@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { T } from '@/lib/tokens';
 import { I } from './icons';
+import { downloadTextFile } from '@/lib/export';
+import { SAMPLE_PROMPT_TEXT, SAMPLE_TEMPLATE_LATEX } from '@/lib/samples';
 
 /* ── Small building blocks ─────────────────────────────────────────── */
 
@@ -131,6 +133,33 @@ export default function GuideView() {
               <FeatureRow Icon={I.Template}  name="Templates"  desc="Manage built-in and custom LaTeX templates that control how the downloaded PDF looks." />
             </div>
             <div style={{ height: '2px' }} />
+          </Card>
+        </div>
+
+        {/* Sample files */}
+        <div>
+          <SectionHeading>Sample files</SectionHeading>
+          <Card>
+            <div style={{ fontSize: '13px', color: T.t2, lineHeight: '1.7', marginBottom: '14px' }}>
+              Writing your own prompt or LaTeX template? Download these reference files as a known-good starting
+              point. The app always enforces the output format and one-page limit, so your custom prompt only needs
+              to describe <strong style={{ fontWeight: 500, color: T.text }}>how</strong> to tailor — no JSON or
+              structure required.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              <button
+                onClick={() => downloadTextFile('resumo-sample-prompt.txt', SAMPLE_PROMPT_TEXT)}
+                style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 16px', background: T.primary, color: '#fff', border: 'none', borderRadius: '4px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+              >
+                Download sample prompt (.txt)
+              </button>
+              <button
+                onClick={() => downloadTextFile('resumo-sample-template.tex', SAMPLE_TEMPLATE_LATEX, 'application/x-tex')}
+                style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '9px 16px', background: 'none', color: T.text, border: `1px solid ${T.border}`, borderRadius: '4px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+              >
+                Download sample template (.tex)
+              </button>
+            </div>
           </Card>
         </div>
 

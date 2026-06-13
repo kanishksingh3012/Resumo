@@ -6,6 +6,8 @@ import { I } from './icons';
 import { PanelLabel } from './atoms';
 import { KEYS, load, save } from '@/lib/storage';
 import { INIT_PROMPTS } from '@/lib/prompts';
+import { SAMPLE_PROMPT_TEXT } from '@/lib/samples';
+import { downloadTextFile } from '@/lib/export';
 import type { Prompt } from '@/lib/types';
 
 export default function PromptsView() {
@@ -61,9 +63,11 @@ export default function PromptsView() {
           <button
             onClick={() => {
               const id = Math.max(...prompts.map(p => p.id)) + 1;
-              setPrompts(ps => [...ps, { id, name: `Prompt ${id}`, active: false, text: '' }]);
+              // Start new prompts from the annotated sample so the format is
+              // always valid and non-breaking — the user edits in their own rules.
+              setPrompts(ps => [...ps, { id, name: `Prompt ${id}`, active: false, text: SAMPLE_PROMPT_TEXT }]);
               setSel(prompts.length);
-              setText('');
+              setText(SAMPLE_PROMPT_TEXT);
             }}
             style={{ display: 'flex', alignItems: 'center', gap: '5px', width: '100%', background: 'none', border: `1px solid ${T.border}`, borderRadius: '3px', padding: '7px 10px', fontSize: '12px', cursor: 'pointer', color: T.t2, fontFamily: 'var(--font-body)' }}
           >
@@ -96,6 +100,20 @@ export default function PromptsView() {
             {isActive && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: T.success }} />}
             {isActive ? 'Active' : 'Set Active'}
           </button>
+          <button
+            onClick={() => setText(SAMPLE_PROMPT_TEXT)}
+            title="Replace the editor with the sample prompt format"
+            style={{ padding: '6px 12px', background: 'none', color: T.t2, border: `1px solid ${T.border}`, borderRadius: '3px', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500 }}
+          >
+            Insert sample
+          </button>
+          <button
+            onClick={() => downloadTextFile('resumo-sample-prompt.txt', SAMPLE_PROMPT_TEXT)}
+            title="Download the sample prompt as a .txt reference file"
+            style={{ padding: '6px 12px', background: 'none', color: T.t2, border: `1px solid ${T.border}`, borderRadius: '3px', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500 }}
+          >
+            Download sample
+          </button>
           {prompts.length > 1 && (
             <button
               onClick={handleDelete}
@@ -104,6 +122,9 @@ export default function PromptsView() {
               Delete
             </button>
           )}
+        </div>
+        <div style={{ padding: '8px 20px', borderTop: `1px solid ${T.border}`, background: '#F9F8F5', fontSize: '11px', color: T.t3, lineHeight: '1.55', flexShrink: 0 }}>
+          Describe only <strong style={{ fontWeight: 600, color: T.t2 }}>how</strong> to tailor the resume. The app always enforces the output format and one-page limit — you don&apos;t need to mention JSON or structure.
         </div>
       </div>
     </div>

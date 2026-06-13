@@ -1,5 +1,19 @@
 import type { ResumeResult } from './types';
 
+// Save an arbitrary text string to the user's machine as a downloaded file.
+// Used for the sample prompt (.txt) and sample template (.tex) reference files.
+export function downloadTextFile(filename: string, content: string, mime = 'text/plain') {
+  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 // Escape characters that are special in LaTeX so generated content compiles.
 function escapeLatex(s: string): string {
   return (s || '')
@@ -106,12 +120,17 @@ export function downloadResumePdf(r: ResumeResult): void {
     .map((s) => `<div class="skill"><span class="cat">${esc(s.category)}</span><span>${esc(s.values)}</span></div>`)
     .join('');
 
+  // @page margin:0 suppresses the browser's auto headers/footers (date, title,
+  // URL, page number). The visible margin lives in .page padding instead, and
+  // is scaled down with the content by the one-page auto-fit below.
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8" />
 <title>${esc(r.name)} — Resume</title>
 <style>
-  @page { size: A4; margin: 14mm; }
+  @page { size: A4; margin: 0; }
   * { box-sizing: border-box; }
-  body { font-family: Georgia, 'Times New Roman', serif; color: #111827; font-size: 11pt; line-height: 1.45; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #111827; font-size: 11pt; line-height: 1.45; }
+  .page { width: 210mm; padding: 15mm 17mm; transform-origin: top left; }
   h1 { font-size: 20pt; margin: 0 0 2px; }
   .subtitle { color: #374151; font-size: 11pt; }
   .contact { color: #6B7280; font-size: 9.5pt; margin-top: 2px; }
@@ -128,16 +147,18 @@ export function downloadResumePdf(r: ResumeResult): void {
   .skill .cat { font-weight: 600; min-width: 90px; }
 </style></head>
 <body>
-  <h1>${esc(r.name)}</h1>
-  <div class="subtitle">${esc(r.subtitle)}</div>
-  <div class="contact">${esc(r.contact)}</div>
-  <hr />
-  <h2>Summary</h2>
-  <p>${esc(r.summary)}</p>
-  <h2>Experience</h2>
-  ${expHtml}
-  <h2>Skills</h2>
-  ${skillsHtml}
+  <div class="page">
+    <h1>${esc(r.name)}</h1>
+    <div class="subtitle">${esc(r.subtitle)}</div>
+    <div class="contact">${esc(r.contact)}</div>
+    <hr />
+    <h2>Summary</h2>
+    <p>${esc(r.summary)}</p>
+    <h2>Experience</h2>
+    ${expHtml}
+    <h2>Skills</h2>
+    ${skillsHtml}
+  </div>
 </body></html>`;
 
   const iframe = document.createElement('iframe');
@@ -156,8 +177,22 @@ export function downloadResumePdf(r: ResumeResult): void {
   doc.close();
 
   iframe.onload = () => {
-    iframe.contentWindow?.focus();
-    iframe.contentWindow?.print();
+    const win = iframe.contentWindow;
+    const page = win?.document.querySelector('.page') as HTMLElement | null;
+    if (win && page) {
+      // Shrink-to-fit a single A4 page: if the content is taller than one page,
+      // scale it down (which also tightens the margins proportionally) so the
+      // resume never spills onto a second page. Short resumes are left at 1:1 —
+      // we never stretch content to fill the page.
+      const pagePx = (297 * 96) / 25.4; // A4 height in CSS px
+      const contentH = page.scrollHeight;
+      if (contentH > pagePx) {
+        const scale = Math.max(0.62, (pagePx / contentH) * 0.985);
+        page.style.zoom = String(scale);
+      }
+    }
+    win?.focus();
+    win?.print();
     setTimeout(() => document.body.removeChild(iframe), 1000);
   };
 }

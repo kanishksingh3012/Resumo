@@ -36,7 +36,9 @@ const OUTPUT_SCHEMA = `Return ONLY a valid JSON object with this exact schema �
 FIELD RULES:
 - "name", "subtitle" (Title · Location), and "contact" come from the candidate's resume.
 - "company" is the hiring company's name, extracted from the job description.
-- "changes" is the changelog: one entry per meaningful edit, max 8 entries.`;
+- "changes" is the changelog: one entry per meaningful edit, max 8 entries.
+
+ONE-PAGE RULE: The tailored resume MUST fit on a single A4 page. Be concise — use 3–5 bullets for the most recent or most relevant roles and 1–2 for older or less relevant ones, and keep each bullet to roughly one line (about 18–24 words). Tighten or drop the weakest bullets rather than overflow. Never pad content to fill space — a clean, shorter resume is better than a crowded one.`;
 
 export async function POST(request: Request) {
   try {
