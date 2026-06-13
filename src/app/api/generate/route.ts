@@ -62,7 +62,7 @@ export async function POST(request: Request) {
 
     const message = await client.messages.create({
       model: selectedModel,
-      max_tokens: useThinking ? 8000 : 4096,
+      max_tokens: useThinking ? 16000 : 8000,
       // Opus 4.8 requires adaptive thinking; the installed SDK's types predate it.
       ...(useThinking ? { thinking: { type: 'adaptive' } as unknown as Anthropic.ThinkingConfigParam } : {}),
       system: systemPrompt,
@@ -75,17 +75,29 @@ export async function POST(request: Request) {
     });
 
     const textBlock = message.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') {
-      return NextResponse.json({ error: 'No text in Claude response' }, { status: 500 });
+    if (!textBlock || textBlock.type !== 'text' || !textBlock.text.trim()) {
+      return NextResponse.json(
+        { error: `Claude returned no resume text (stop reason: ${message.stop_reason}). Try again, or switch to a lighter model in Settings.` },
+        { status: 500 },
+      );
     }
 
     let result;
     try {
-      const raw = textBlock.text.trim();
-      const jsonStr = raw.startsWith('```') ? raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '') : raw;
+      let jsonStr = textBlock.text.trim();
+      // Strip ```json fences if present, then slice to the outermost JSON object
+      // so any stray reasoning text around the JSON doesn't break parsing.
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '');
+      }
+      const first = jsonStr.indexOf('{');
+      const last = jsonStr.lastIndexOf('}');
+      if (first !== -1 && last > first) {
+        jsonStr = jsonStr.slice(first, last + 1);
+      }
       result = JSON.parse(jsonStr);
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON from Claude', raw: textBlock.text }, { status: 500 });
+      return NextResponse.json({ error: 'Could not parse the resume from Claude. Please try again.', raw: textBlock.text }, { status: 500 });
     }
 
     return NextResponse.json(result);

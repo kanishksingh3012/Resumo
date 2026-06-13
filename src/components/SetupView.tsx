@@ -40,15 +40,42 @@ export default function SetupView({ needKey, needResume, onComplete }: SetupView
     }
   };
 
+  const [extracting, setExtracting] = useState(false);
+
   const handleFile = async (file: File) => {
-    const text = await file.text().catch(() => null);
-    if (!text || text.length < 50) {
+    setError(false);
+    const lower = file.name.toLowerCase();
+    const isPdf = lower.endsWith('.pdf');
+    const isTxt = lower.endsWith('.txt');
+    let text: string | null = null;
+
+    if (isPdf) {
+      // PDFs are binary — extract real text server-side (file.text() would
+      // return raw bytes, not the resume content).
+      setExtracting(true);
+      try {
+        const res = await fetch('/api/extract', { method: 'POST', body: file });
+        if (res.ok) text = (await res.json()).text;
+      } catch {
+        text = null;
+      } finally {
+        setExtracting(false);
+      }
+    } else if (isTxt) {
+      text = await file.text().catch(() => null);
+    } else {
+      // DOCX and others can't be reliably extracted in-browser — use paste.
+      setError(true);
+      return;
+    }
+
+    if (!text || text.trim().length < 50) {
       setError(true);
       return;
     }
     acceptResume({
       name: file.name,
-      format: file.name.endsWith('.pdf') ? 'PDF' : 'DOCX',
+      format: isPdf ? 'PDF' : 'TXT',
       chars: text.length,
       modified: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       text,
@@ -148,10 +175,14 @@ export default function SetupView({ needKey, needResume, onComplete }: SetupView
                   >
                     <span style={{ color: drag ? T.accent : error ? T.danger : T.t3, lineHeight: 0 }}><I.Upload /></span>
                     <div>
-                      <div style={{ fontSize: '14px', fontWeight: 500 }}>Drop your PDF or DOCX here</div>
-                      <div style={{ fontSize: '12px', color: T.t3, marginTop: '3px' }}>or click to browse</div>
+                      <div style={{ fontSize: '14px', fontWeight: 500 }}>
+                        {extracting ? 'Extracting text…' : 'Drop your PDF here'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: T.t3, marginTop: '3px' }}>
+                        {extracting ? 'Reading your resume' : 'or click to browse'}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '11px', color: T.t3 }}>Supports .pdf and .docx</div>
+                    <div style={{ fontSize: '11px', color: T.t3 }}>PDF or .txt · for .docx, paste below</div>
                   </div>
                   <input
                     id="resume-upload"

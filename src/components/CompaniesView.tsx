@@ -24,6 +24,8 @@ export default function CompaniesView({ companies, setCompanies }: CompaniesView
     setCompanies(cs => [...cs, { id, name: name.trim(), role, date }]);
   };
 
+  const handleDelete = (id: number) => setCompanies(cs => cs.filter(c => c.id !== id));
+
   return (
     <div style={{ flex: 1, padding: '20px 24px', overflowY: 'auto' }}>
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
@@ -61,7 +63,18 @@ export default function CompaniesView({ companies, setCompanies }: CompaniesView
                 <div style={{ fontSize: '13px', fontWeight: 500 }}>{c.name}</div>
                 <div style={{ fontSize: '12px', color: T.t3, marginTop: '2px' }}>{c.role}</div>
               </div>
-              <div style={{ fontSize: '11px', color: T.t3, fontFamily: 'var(--font-mono)' }}>{c.date}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '11px', color: T.t3, fontFamily: 'var(--font-mono)' }}>{c.date}</span>
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  title="Delete"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.t3, lineHeight: 0, padding: '4px', borderRadius: '3px' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.danger; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = T.t3; }}
+                >
+                  <I.Close />
+                </button>
+              </div>
             </div>
           ))}
         </div>

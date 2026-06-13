@@ -27,6 +27,17 @@ export default function PromptsView() {
 
   const isActive = current?.active;
 
+  const handleDelete = () => {
+    if (prompts.length <= 1) return; // keep at least one prompt
+    const wasActive = prompts[sel]?.active;
+    const next = prompts.filter((_, i) => i !== sel);
+    if (wasActive && next.length) next[0] = { ...next[0], active: true };
+    const newSel = Math.max(0, sel - 1);
+    setPrompts(next);
+    setSel(newSel);
+    setText(next[newSel]?.text ?? '');
+  };
+
   return (
     <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '200px 1fr', overflow: 'hidden' }}>
       {/* List */}
@@ -85,6 +96,14 @@ export default function PromptsView() {
             {isActive && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: T.success }} />}
             {isActive ? 'Active' : 'Set Active'}
           </button>
+          {prompts.length > 1 && (
+            <button
+              onClick={handleDelete}
+              style={{ marginLeft: 'auto', padding: '6px 12px', background: '#FFF5F5', color: T.danger, border: '1px solid #FCA5A5', borderRadius: '3px', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 500 }}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </div>
     </div>

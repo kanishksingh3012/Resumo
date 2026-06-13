@@ -5,6 +5,7 @@ import { T } from '@/lib/tokens';
 import { I } from './icons';
 import { ToolBtn } from './atoms';
 import ResumeDoc from './ResumeDoc';
+import { downloadResumePdf } from '@/lib/export';
 import type { ResumeResult } from '@/lib/types';
 
 const A4_W = 794;
@@ -75,9 +76,9 @@ export default function ResumeRightPanel({ panelWidth, result }: ResumeRightPane
 
         <div style={{ flex: 1 }} />
 
-        <ToolBtn title="Print" onClick={() => window.print()}><I.Print /></ToolBtn>
+        <ToolBtn title={result ? 'Print / Save as PDF' : 'Generate a resume first'} disabled={!result} onClick={() => result && downloadResumePdf(result)}><I.Print /></ToolBtn>
         <VDivider />
-        <ToolBtn title="Download PDF"><I.Download /></ToolBtn>
+        <ToolBtn title={result ? 'Download PDF' : 'Generate a resume first'} disabled={!result} onClick={() => result && downloadResumePdf(result)}><I.Download /></ToolBtn>
       </div>
 
       {/* Scrollable doc */}

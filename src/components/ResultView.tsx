@@ -5,6 +5,7 @@ import { T } from '@/lib/tokens';
 import { I } from './icons';
 import { PanelLabel } from './atoms';
 import ResumeDoc from './ResumeDoc';
+import { downloadResumePdf, openInOverleaf } from '@/lib/export';
 import type { ResumeResult } from '@/lib/types';
 
 const SECTION_META: Record<string, [string, string]> = {
@@ -66,10 +67,10 @@ export default function ResultView({ result, onNewApplication }: { result: Resum
       </div>
 
       <div style={{ padding: '11px 24px', borderTop: `1px solid ${T.border}`, background: T.surface, display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-        <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: T.primary, color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+        <button onClick={() => downloadResumePdf(result)} style={{ display: 'flex', alignItems: 'center', gap: '6px', background: T.primary, color: '#fff', border: 'none', borderRadius: '4px', padding: '8px 16px', fontSize: '13px', fontWeight: 500, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
           <I.Download /> Download PDF
         </button>
-        <button style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: `1px solid ${T.border}`, borderRadius: '4px', padding: '8px 14px', fontSize: '13px', color: T.t2, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
+        <button onClick={() => openInOverleaf(result)} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: `1px solid ${T.border}`, borderRadius: '4px', padding: '8px 14px', fontSize: '13px', color: T.t2, cursor: 'pointer', fontFamily: 'var(--font-body)' }}>
           Open in Overleaf <I.External />
         </button>
         <button

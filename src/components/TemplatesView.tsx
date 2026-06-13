@@ -164,7 +164,7 @@ function AddTemplateModal({ onSave, onClose }: { onSave: (t: { name: string; lat
   );
 }
 
-function TemplateCard({ template, active, onSetActive, onEdit, onDelete }: { template: Template; active: boolean; onSetActive: () => void; onEdit: () => void; onDelete: () => void }) {
+function TemplateCard({ template, active, onSetActive, onEdit, onDelete }: { template: Template; active: boolean; onSetActive: () => void; onEdit: () => void; onDelete?: () => void }) {
   return (
     <div style={{ background: active ? T.accentBg : T.surface, border: `1px solid ${active ? T.accent : T.border}`, borderRadius: '4px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'border-color 0.1s,background 0.1s' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -182,7 +182,7 @@ function TemplateCard({ template, active, onSetActive, onEdit, onDelete }: { tem
         <button onClick={onEdit} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '5px 10px', border: `1px solid ${T.border}`, borderRadius: '3px', background: 'none', color: T.t2, fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)', lineHeight: 0 }}>
           <I.Edit /><span style={{ lineHeight: 'normal', fontSize: '12px' }}>Edit</span>
         </button>
-        {template.type === 'custom' && (
+        {onDelete && (
           <button onClick={onDelete} style={{ padding: '5px 10px', border: '1px solid #FCA5A5', borderRadius: '3px', background: '#FFF5F5', color: T.danger, fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>Delete</button>
         )}
       </div>
@@ -202,7 +202,16 @@ export default function TemplatesView({ activeTemplate, setActiveTemplate }: { a
     if (tpl) setActiveTemplate(tpl.name);
   };
 
-  const handleDelete = (id: number) => setTemplates(ts => ts.filter(t => t.id !== id));
+  const handleDelete = (id: number) => {
+    const target = templates.find(t => t.id === id);
+    setTemplates(ts => {
+      if (ts.length <= 1) return ts; // keep at least one template
+      const next = ts.filter(t => t.id !== id);
+      // If the active template was deleted, fall back to the first remaining one.
+      if (target && target.name === activeTemplate) setActiveTemplate(next[0].name);
+      return next;
+    });
+  };
 
   const handleAdd = ({ name, latex }: { name: string; latex: string }) => {
     setTemplates(ts => [...ts, { id: Math.max(...ts.map(t => t.id), 0) + 1, name, latex, type: 'custom' }]);
@@ -235,7 +244,7 @@ export default function TemplatesView({ activeTemplate, setActiveTemplate }: { a
             active={t.name === activeTemplate}
             onSetActive={() => handleSetActive(t.id)}
             onEdit={() => setEditTarget(t)}
-            onDelete={() => handleDelete(t.id)}
+            onDelete={templates.length > 1 ? () => handleDelete(t.id) : undefined}
           />
         ))}
       </div>
