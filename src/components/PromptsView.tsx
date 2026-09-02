@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { T } from '@/lib/tokens';
 import { I } from './icons';
-import { PanelLabel } from './atoms';
 import { KEYS, load, save } from '@/lib/storage';
 import { INIT_PROMPTS } from '@/lib/prompts';
 import { SAMPLE_PROMPT_TEXT } from '@/lib/samples';
@@ -46,9 +45,6 @@ export default function PromptsView() {
     <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '200px 1fr', overflow: 'hidden' }}>
       {/* List */}
       <div style={{ borderRight: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '10px 12px', borderBottom: `1px solid ${T.border}` }}>
-          <PanelLabel>Prompts</PanelLabel>
-        </div>
         <div style={{ flex: 1, overflow: 'auto', padding: '4px' }}>
           {prompts.map((p, i) => (
             <div
