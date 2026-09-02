@@ -301,7 +301,7 @@ export default function App() {
             <div style={{ padding: '0 16px', height: '52px', borderBottom: `1px solid ${T.border}`, background: T.surface, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <PanelLabel>Resume Preview</PanelLabel>
               <span style={{ fontSize: '11px', color: T.t3, fontFamily: 'var(--font-mono)' }}>
-                {result ? `Tailored · ${result.company}` : `Uploaded · ${resume.modified}`}
+                {result ? `Tailored · ${result.company}` : resume ? `Uploaded · ${resume.modified}` : 'No resume'}
               </span>
             </div>
             <ResumeRightPanel panelWidth={rightPanelW} result={result} />
