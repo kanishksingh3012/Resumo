@@ -16,6 +16,7 @@ import TemplatesView from './TemplatesView';
 import GuideView from './GuideView';
 import ResumeRightPanel from './ResumeRightPanel';
 import SettingsModal from './SettingsModal';
+import ResumeUploadModal from './ResumeUploadModal';
 import { KEYS, load, save, remove, clearAll, type StoredApiKey } from '@/lib/storage';
 import { INIT_PROMPTS, DEFAULT_PROMPT_TEXT } from '@/lib/prompts';
 import type { NavId, Screen, Model, PromptMode, ResumeFile, ResumeResult, Company, Prompt } from '@/lib/types';
@@ -28,6 +29,7 @@ export default function App() {
   const [hydrated, setHydrated]             = useState(false);
   const [jdText, setJdText]                 = useState('');
   const [showSettings, setShowSettings]     = useState(false);
+  const [showResumeModal, setShowResumeModal] = useState(false);
   const [collapsed, setCollapsed]           = useState(false);
   const [procMsg, setProcMsg]               = useState('Analysing job description…');
   const [activeTemplate, setActiveTemplate] = useState('Preset');
@@ -70,6 +72,12 @@ export default function App() {
       save(KEYS.resume, newResume);
       setResume(newResume);
     }
+  };
+
+  const handleResumeModalComplete = (newResume: ResumeFile) => {
+    save(KEYS.resume, newResume);
+    setResume(newResume);
+    setShowResumeModal(false);
   };
 
   const handleApiKeyChange = (newKey: string | null) => {
@@ -212,9 +220,9 @@ export default function App() {
   // Avoid SSR mismatch — don't render until localStorage is hydrated
   if (!hydrated) return null;
 
-  // Full-screen states
-  if (!apiKey || !resume) {
-    return <SetupView needKey={!apiKey} needResume={!resume} onComplete={handleSetupComplete} />;
+  // Full-screen states — only block when API key is missing
+  if (!apiKey) {
+    return <SetupView needKey={true} needResume={!resume} onComplete={handleSetupComplete} />;
   }
   if (screen === 'processing') return <ProcessingView message={procMsg} onSkip={handleSkip} />;
 
@@ -227,7 +235,7 @@ export default function App() {
     return (
       <HomeView
         resume={resume}
-        setHasResume={(v) => { if (!v) { remove(KEYS.resume); setResume(null); } }}
+        onUploadResume={() => setShowResumeModal(true)}
         jdText={jdText}
         setJdText={setJdText}
         onGenerate={handleGenerate}
@@ -301,6 +309,13 @@ export default function App() {
         </>
       )}
 
+      {showResumeModal && (
+        <ResumeUploadModal
+          onComplete={handleResumeModalComplete}
+          onClose={() => setShowResumeModal(false)}
+        />
+      )}
+
       {showSettings && (
         <SettingsModal
           onClose={() => setShowSettings(false)}
@@ -309,7 +324,7 @@ export default function App() {
           resume={resume}
           apiKey={apiKey}
           onApiKeyChange={handleApiKeyChange}
-          onReplaceResume={() => { remove(KEYS.resume); setResume(null); setShowSettings(false); }}
+          onReplaceResume={() => { setShowSettings(false); setShowResumeModal(true); }}
           onReset={handleReset}
         />
       )}

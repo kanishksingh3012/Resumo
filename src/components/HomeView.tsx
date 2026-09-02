@@ -7,8 +7,8 @@ import { PanelLabel } from './atoms';
 import type { ResumeFile, Model, PromptMode, NavId } from '@/lib/types';
 
 interface HomeViewProps {
-  resume: ResumeFile;
-  setHasResume: (v: boolean) => void;
+  resume: ResumeFile | null;
+  onUploadResume: () => void;
   jdText: string;
   setJdText: (v: string) => void;
   onGenerate: (model: Model, promptMode: PromptMode, customPrompt: string) => void;
@@ -117,11 +117,11 @@ function SettingsPanel({
   );
 }
 
-export default function HomeView({ resume, setHasResume, jdText, setJdText, onGenerate, activeTemplate, onChangeTemplate, showBackupBanner, onDismissBanner }: HomeViewProps) {
+export default function HomeView({ resume, onUploadResume, jdText, setJdText, onGenerate, activeTemplate, onChangeTemplate, showBackupBanner, onDismissBanner }: HomeViewProps) {
   const [model, setModel]               = useState<Model>('claude-opus-4-8');
   const [promptMode, setPromptMode]     = useState<PromptMode>('default');
   const [customPrompt, setCustomPrompt] = useState('');
-  const canGenerate = jdText.length >= 50;
+  const canGenerate = jdText.length >= 50 && !!resume;
 
   return (
     <div style={{ flex: 1, padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
@@ -135,7 +135,20 @@ export default function HomeView({ resume, setHasResume, jdText, setJdText, onGe
           </button>
         </div>
       )}
-      <ResumeBar resume={resume} onReplace={() => setHasResume(false)} />
+      {resume ? (
+        <ResumeBar resume={resume} onReplace={onUploadResume} />
+      ) : (
+        <button
+          onClick={onUploadResume}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 14px', background: T.surface, border: `1px dashed ${T.borderStrong}`, borderRadius: '4px', width: '100%', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+            <span style={{ color: T.t3, lineHeight: 0 }}><I.File /></span>
+            <span style={{ fontSize: '13px', color: T.t2 }}>No resume added</span>
+          </div>
+          <span style={{ fontSize: '12px', color: T.accent, textDecoration: 'underline', textUnderlineOffset: '2px' }}>Add resume →</span>
+        </button>
+      )}
       <TemplateBar template={activeTemplate} onChange={onChangeTemplate} />
 
       <textarea
