@@ -11,7 +11,7 @@ interface SettingsModalProps {
   onClose: () => void;
   onGoTemplates: () => void;
   activeTemplate: string;
-  resume: ResumeFile;
+  resume: ResumeFile | null;
   apiKey: string;
   onApiKeyChange: (key: string | null) => void;
   onReplaceResume: () => void;
@@ -113,8 +113,8 @@ export default function SettingsModal({ onClose, onGoTemplates, activeTemplate, 
           )}
           <Divider />
 
-          <SettRow label="Resume" sub={`${resume.name} · ${resume.format} · ${resume.chars.toLocaleString()} chars`}>
-            <GhostBtn onClick={onReplaceResume}>Replace</GhostBtn>
+          <SettRow label="Resume" sub={resume ? `${resume.name} · ${resume.format} · ${resume.chars.toLocaleString()} chars` : 'No resume added'}>
+            <GhostBtn onClick={onReplaceResume}>{resume ? 'Replace' : 'Add'}</GhostBtn>
           </SettRow>
           <Divider />
 
