@@ -14,6 +14,8 @@ export default function PromptsView() {
   const [prompts, setPrompts] = useState<Prompt[]>(() => load<Prompt[]>(KEYS.prompts, INIT_PROMPTS));
   const [sel, setSel]         = useState(0);
   const [text, setText]       = useState(() => load<Prompt[]>(KEYS.prompts, INIT_PROMPTS)[0]?.text ?? '');
+  const [renaming, setRenaming] = useState(false);
+  const [nameInput, setNameInput] = useState('');
 
   useEffect(() => { save(KEYS.prompts, prompts); }, [prompts]);
 
@@ -51,7 +53,7 @@ export default function PromptsView() {
           {prompts.map((p, i) => (
             <div
               key={p.id}
-              onClick={() => { setSel(i); setText(p.text); }}
+              onClick={() => { setSel(i); setText(p.text); setRenaming(false); }}
               style={{ padding: '8px 10px', borderRadius: '3px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '7px', background: sel === i ? T.accentBg : 'transparent', borderLeft: sel === i ? `2px solid ${T.accent}` : '2px solid transparent' }}
             >
               {p.active && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: T.accent, flexShrink: 0 }} />}
@@ -78,8 +80,35 @@ export default function PromptsView() {
 
       {/* Editor */}
       <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '13px 20px', borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 600 }}>{current?.name}</div>
+        <div style={{ padding: '13px 20px', borderBottom: `1px solid ${T.border}`, flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {renaming ? (
+            <input
+              autoFocus
+              value={nameInput}
+              onChange={e => setNameInput(e.target.value)}
+              onBlur={() => {
+                const trimmed = nameInput.trim();
+                if (trimmed) setPrompts(ps => ps.map((p, i) => i === sel ? { ...p, name: trimmed } : p));
+                setRenaming(false);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                if (e.key === 'Escape') setRenaming(false);
+              }}
+              style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 600, border: 'none', borderBottom: `2px solid ${T.accent}`, outline: 'none', background: 'transparent', color: T.text, width: '100%', padding: '0' }}
+            />
+          ) : (
+            <>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '14px', fontWeight: 600 }}>{current?.name}</div>
+              <button
+                onClick={() => { setNameInput(current?.name ?? ''); setRenaming(true); }}
+                title="Rename prompt"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.t3, lineHeight: 0, padding: '2px', borderRadius: '3px', flexShrink: 0 }}
+              >
+                <I.Edit />
+              </button>
+            </>
+          )}
         </div>
         <textarea
           value={text}
